@@ -1,0 +1,18 @@
+{
+    "root": [
+        "./src/index.ts",
+        "./src/common/checkrequestparams.ts",
+        "./src/common/generatecaptcha.ts",
+        "./src/common/mailutils.ts",
+        "./src/common/result.ts",
+        "./src/config/config.ts",
+        "./src/config/database.ts",
+        "./src/controllers/usercontroller.ts",
+        "./src/middlewares/errorhandler.ts",
+        "./src/models/entity/user.ts",
+        "./src/models/req/registerreq.ts",
+        "./src/routes/userrouter.ts",
+        "./src/services/userservice.ts"
+    ],
+    "version": "5.7.3"
+}

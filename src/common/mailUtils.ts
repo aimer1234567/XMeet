@@ -24,9 +24,9 @@ export default class MailUtils {
     };
     try {
       const info = await this.mailTransporter.sendMail(mailOptions);
-      return info.messageId;
-    } catch (error) {
-      console.error("Error sending email:", error);
+      return JSON.stringify(info);
+    } catch (e) {
+      throw new Error("发送邮件失败")
     }
   }
   
