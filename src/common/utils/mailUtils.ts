@@ -1,9 +1,8 @@
 import nodemailer from "nodemailer";
 import config from "../config/config";
-const mailUtilsParameter=config.mailUtils;
+const mailUtilsParameter = config.mailUtils;
 export default class MailUtils {
-
-    private mailTransporter:nodemailer.Transporter;
+  private mailTransporter: nodemailer.Transporter;
   constructor() {
     this.mailTransporter = nodemailer.createTransport({
       host: mailUtilsParameter.host,
@@ -15,7 +14,7 @@ export default class MailUtils {
       },
     });
   }
-  async sendCaptcha(toMail:string,captcha:number){
+  async sendCaptcha(toMail: string, captcha: number) {
     const mailOptions = {
       from: mailUtilsParameter.user, // 发件人
       to: toMail, // 收件人
@@ -26,8 +25,7 @@ export default class MailUtils {
       const info = await this.mailTransporter.sendMail(mailOptions);
       return JSON.stringify(info);
     } catch (e) {
-      throw new Error("发送邮件失败")
+      throw new Error("发送邮件失败");
     }
   }
-  
 }

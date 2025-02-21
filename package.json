@@ -11,22 +11,29 @@
   "dependencies": {
     "@types/express-serve-static-core": "^5.0.6",
     "express": "^4.17.1",
+    "jsonwebtoken": "^9.0.2",
+    "mediasoup": "^3.15.3",
     "meet": "file:",
     "memory-cache": "^0.2.0",
     "mysql2": "^3.12.0",
+    "node-cache": "^5.1.2",
     "nodemailer": "^6.10.0",
     "reflect-metadata": "^0.2.2",
     "source-map-support": "^0.5.21",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "vosk": "^0.3.39",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.1",
+    "@types/jsonwebtoken": "^9.0.8",
     "@types/memory-cache": "^0.2.6",
     "@types/node": "^22.13.4",
     "@types/nodemailer": "^6.4.17",
     "@types/source-map-support": "^0.5.10",
     "@types/swagger-ui-express": "^4.1.7",
+    "@types/ws": "^8.5.14",
     "express-oas-generator": "^1.0.46"
   }
 }

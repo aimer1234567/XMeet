@@ -1,5 +1,5 @@
 import { DataSource } from "typeorm";
-import User from "../models/entity/user";
+import User from "../../models/entity/user";
 
 export const AppDataSource = new DataSource({
   type: "mysql",
@@ -13,6 +13,5 @@ export const AppDataSource = new DataSource({
   entities: [User], // 将所有实体放到数组中
   migrations: [],
 });
-
 
 export default AppDataSource;

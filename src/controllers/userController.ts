@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import Result from "../common/result";
 import UserService from "../services/userService";
-import UserRegisterReq from "../models/req/registerReq";
+import UserRegisterReq from "../models/req/user/registerReq";
 import { channel } from "diagnostics_channel";
+import LoginReq from "../models/req/user/loginReq";
 export default class UserController {
   userService: UserService = new UserService();
   async getMailCaptcha(req: Request, res: Response, next: NextFunction) {
@@ -22,5 +23,15 @@ export default class UserController {
       req.body.password
     );
     res.json(this.userService.register(userRegisterReq));
+  }
+
+  async login(req: Request, res: Response, next: NextFunction) {
+    let loginReq = new LoginReq(req.body.username, req.body.password);
+    try {
+      let token = await this.userService.login(loginReq);
+      res.json(Result.succuss(token));
+    } catch (err) {
+      next(err);
+    }
   }
 }

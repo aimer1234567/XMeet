@@ -3,11 +3,18 @@ import "reflect-metadata";
 import userRouter from "./routes/userRouter";
 import expressOasGenerator from "express-oas-generator";
 import swaggerUi from "swagger-ui-express";
-import AppDataSource from "./config/database";
+import AppDataSource from "./common/config/database";
 import errorHandler from "./middlewares/errorHandler";
-import sourceMapSupport from 'source-map-support'
+import sourceMapSupport from "source-map-support";
+import WebSocket = require("ws");
+import http from "http";
+import { MediaService } from "./webSocket/socketServer";
+
 sourceMapSupport.install(); //在运行js文件时可以直接调试ts文件
-const app = express();
+const app = express(); //创建express实例
+const server = http.createServer(app); //创建http服务器
+const wss = new WebSocket.Server({ server });
+MediaService(wss);
 expressOasGenerator.init(app);
 app.use(express.json());
 // 设置 Swagger UI 来展示 API 文档
@@ -20,8 +27,8 @@ app.use(
     },
   })
 );
-app.post("/", async(req, res) => {
-  res.send("dqd")
+app.post("/", async (req, res) => {
+  res.send("dqd");
 });
 app.use("/user", userRouter);
 app.use(errorHandler);

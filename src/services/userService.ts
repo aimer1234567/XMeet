@@ -1,22 +1,30 @@
-import cache from "memory-cache";
-import MailUtils from "../common/mailUtils";
+import NodeCache from "node-cache";
+import MailUtils from "../common/utils/mailUtils";
 import Result from "../common/result";
-import generateCaptcha from "../common/generateCaptcha";
-import UserRegisterReq from "../models/req/registerReq";
-import AppDataSource from "../config/database";
+import generateCaptcha from "../common/utils/generateCaptcha";
+import UserRegisterReq from "../models/req/user/registerReq";
+import AppDataSource from "../common/config/database";
 import User from "../models/entity/user";
+import LoginReq from "../models/req/user/loginReq";
+import UserDao from "../dao/userDao";
+import { ErrorEnum } from "../common/enums/errorEnum";
+import jwt from "jsonwebtoken";
+import config from "../common/config/config";
 export default class UserService {
-  cache = cache;
+  cache = new NodeCache();
   mailUtils: MailUtils = new MailUtils();
+  userDao: UserDao = new UserDao();
+  /// TODO: 优化，防止多次获取验证码
   async getMailCaptcha(mail: string) {
     let captcha = generateCaptcha();
     try {
       await this.mailUtils.sendCaptcha(mail, captcha);
-      this.cache.put(mail, captcha, 60000);
+      this.cache.set(mail, captcha, 60000);
     } catch (err) {
       throw err;
     }
   }
+  // TODO: 优化，防止多次注册，防止邮箱重复，账号重复要反馈错误
   async register(userRegisterReq: UserRegisterReq) {
     const captchaVerify = this.cache.get(userRegisterReq.email);
     if (captchaVerify === null) {
@@ -31,6 +39,18 @@ export default class UserService {
       );
       await AppDataSource.manager.save(user);
       return Result.succuss();
+    }
+  }
+  //TODO:
+  async login(loginReq: LoginReq) {
+    let user = await this.userDao.selectByUsername(loginReq.username);
+    if (user === null) {
+      throw new Error(ErrorEnum.UserIsNone);
+    } else if (user.password !== loginReq.password) {
+      throw new Error(ErrorEnum.PasswordError);
+    }else{
+      let token=jwt.sign({userId:user.id},config.jwt,{expiresIn:'30D',algorithm:"HS256"} as jwt.SignOptions)
+      return token
     }
   }
 }
