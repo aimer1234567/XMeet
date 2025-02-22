@@ -1,5 +1,7 @@
+import { types } from "mediasoup";
 export default class Peer{
     producers=new Map()
+    transports=new Map<string,types.Transport>()
     constructor(
         public peerId:string,
     ){}
@@ -7,8 +9,18 @@ export default class Peer{
     getProducer(producerId:string){
         return this.producers.get(producerId)
     }
+    addTransport(transport:types.Transport) {
+      this.transports.set(transport.id, transport)
+    }
+
+    async connectTransport(transportId:string, dtlsParameters:unknown) {
+      if (!this.transports.has(transportId)) return
+      await this.transports.get(transportId)!.connect({
+        dtlsParameters: dtlsParameters
+      })
+    }
     
-    async createConsumer(consumer_transport_id, producer_id, rtpCapabilities) {
+    async createConsumer(consumer_transport_id:string, producer_id:string , rtpCapabilities:string) {
         let consumerTransport = this.transports.get(consumer_transport_id)
     
         let consumer = null

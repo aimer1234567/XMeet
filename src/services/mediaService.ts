@@ -5,11 +5,12 @@ import { types } from "mediasoup";
 import Room from "../models/media/room";
 import Peer from "../models/media/peer";
 import { ErrorEnum } from "../common/enums/errorEnum";
-import { ConsumeReq } from "../models/resq/mediaReq";
+import { ConsumeReq, ConnectTransportReq } from "../models/req/mediaReq";
+import MyError from "../common/myError";
 export default class MediaService {
   roomList: Map<string, Room> = new Map(); //房间列表
   workers: Array<types.Worker<types.AppData>> = []; //mediasoup工作线程
-  userIdToRoomid: Map<string, string> = new Map();
+  userIdToRoomId: Map<string, string> = new Map();
   nextMediasoupWorkerIdx = 0; //mediasoup工作线程索引
   constructor() {
     this.createWorkers();
@@ -20,13 +21,13 @@ export default class MediaService {
    * @returns
    */
 
-  createRoom(roomId: string) {
+  createRoom(roomId: string, userId: string) {
     if (this.roomList.has(roomId)) {
-      return Result.succuss({ isRoom: false });
+      throw new MyError(ErrorEnum.RoomIsExist);
     } else {
       console.log("create room", roomId);
       let worker = this.getMediasoupWorker();
-      this.roomList.set(roomId, new Room(roomId, worker));
+      this.roomList.set(roomId, new Room(roomId, worker, userId));
       return Result.succuss({ isRoom: true, roomId: roomId });
     }
   }
@@ -42,26 +43,96 @@ export default class MediaService {
       return Result.error(ErrorEnum.RoomNotExist);
     }
     this.roomList.get(roomId)!.addPeer(new Peer(userId));
-    this.userIdToRoomid.set(userId, roomId); //TODO: 优化，防止多次加入,记得退房时去除
+    this.userIdToRoomId.set(userId, roomId); //TODO: 优化，防止多次加入,记得退房时去除
     return Result.succuss();
   }
-  getProducers(userId: string){
-    let roomId=this.userIdToRoomid.get(userId);
-    if (!roomId){
+  /**
+   * 返回客户端的rtp参数
+   * @param userId
+   * @returns
+   */
+  getRouterRtpCapabilities(userId: string) {
+    try {
+      let roomId = this.userIdToRoomId.get(userId);
+      if (roomId === undefined) {
+        throw new MyError(ErrorEnum.RoomNotExist);
+      }
+      console.log("Get RouterRtpCapabilities:", { userId });
+      return Result.succuss(this.roomList.get(roomId)!.getRtpCapabilities());
+    } catch (e) {
+      if (e instanceof MyError) {
+        return Result.error(e.message);
+      }
+    }
+  }
+  /**
+   * chuangjian
+   * @param userId
+   * @returns
+   */
+  async createWebRtcTransport(userId: string) {
+    console.log("createWebRtcTransport:", { userId });
+    try {
+      let roomId = this.userIdToRoomId.get(userId);
+      if (roomId === undefined) {
+        throw new MyError(ErrorEnum.RoomNotExist);
+      }
+      const params = await this.roomList
+        .get(roomId)
+        ?.createWebRtcTransport(userId);
+      return Result.succuss(params);
+    } catch (err) {
+      if (err instanceof MyError) {
+        throw new MyError(err.msg);
+      }
+    }
+  }
+
+  async connectTransport(
+    connectTransportReq: ConnectTransportReq,
+    userId: string
+  ) {
+    console.log("Connect transport", { userId });
+    try {
+      let roomId = this.userIdToRoomId.get(userId);
+      if (roomId === undefined) {
+        throw new MyError(ErrorEnum.RoomNotExist);
+      }
+      await this.roomList
+        .get(roomId)!
+        .connectPeerTransport(
+          userId,
+          connectTransportReq.transportId,
+          connectTransportReq.dtlsParameters
+        );
+    } catch (e) {
+      if (e instanceof MyError) {
+        throw new MyError(e.msg);
+      }
+    }
+  }
+  /**
+   * 客户端获取本房间所有人的生产通道
+   * @param userId
+   * @returns
+   */
+  getProducers(userId: string) {
+    let roomId = this.userIdToRoomId.get(userId);
+    if (!roomId) {
       return Result.error(ErrorEnum.RoomNotExist);
     }
     console.log("getProducers:", { name: userId, roomId });
-    let producerList=this.roomList.get(roomId)?.getProducerListForPeer()
+    let producerList = this.roomList.get(roomId)?.getProducerListForPeer();
     return Result.succuss(producerList);
   }
 
-  async consume(ConsumeReq:ConsumeReq,userId:string){
-    let roomId=this.userIdToRoomid.get(userId);
-    if (!roomId){
-      return Result.error(ErrorEnum.RoomNotExist);
-    }
-    await this.roomList.get(roomId).
-  }
+  // async consume(ConsumeReq:ConsumeReq,userId:string){
+  //   let roomId=this.userIdToRoomId.get(userId);
+  //   if (!roomId){
+  //     return Result.error(ErrorEnum.RoomNotExist);
+  //   }
+  //   await this.roomList.get(roomId).
+  // }
   /**
    * @returns mediasoup工作线程
    */

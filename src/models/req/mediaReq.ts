@@ -5,3 +5,10 @@ export class ConsumeReq{
         public rtpCapabilities:any,
     ){}
 }
+
+export class ConnectTransportReq{
+    constructor(
+        public transportId:string,
+        public dtlsParameters:unknown,
+    ){}
+}
