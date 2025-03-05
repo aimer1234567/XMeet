@@ -1,19 +1,18 @@
 import Result from "../common/result";
 import config from "../common/config/config";
-import mediasoup from "mediasoup";
+import {createWorker} from "mediasoup";
 import { types } from "mediasoup";
 import Room from "../models/media/room";
 import Peer from "../models/media/peer";
 import { ErrorEnum } from "../common/enums/errorEnum";
-import { ConsumeReq, ConnectTransportReq } from "../models/req/mediaReq";
+import { ConsumeReq, ConnectTransportReq,ProduceReq } from "../models/req/mediaReq";
 import MyError from "../common/myError";
-export default class MediaService {
+class MediaService {
   roomList: Map<string, Room> = new Map(); //房间列表
   workers: Array<types.Worker<types.AppData>> = []; //mediasoup工作线程
   userIdToRoomId: Map<string, string> = new Map();
   nextMediasoupWorkerIdx = 0; //mediasoup工作线程索引
   constructor() {
-    this.createWorkers();
   }
   /**
    * 创建会议室
@@ -105,11 +104,26 @@ export default class MediaService {
           connectTransportReq.transportId,
           connectTransportReq.dtlsParameters
         );
+      return Result.succuss();
     } catch (e) {
       if (e instanceof MyError) {
         throw new MyError(e.msg);
       }
     }
+  }
+
+  async produce(produceReq: ProduceReq,userId:string){
+    let roomId = this.userIdToRoomId.get(userId);
+    if (!roomId) {
+      return Result.error(ErrorEnum.RoomNotExist);
+    }
+    let producerId =await this.roomList.get(roomId)!.produce(userId,produceReq.producerTransportId,produceReq.rtpParameters,produceReq.kind);
+    console.log('produce',{
+      type:produceReq.kind,
+      userId,
+      id:producerId
+    })
+    return Result.succuss(producerId)
   }
   /**
    * 客户端获取本房间所有人的生产通道
@@ -136,7 +150,7 @@ export default class MediaService {
   /**
    * @returns mediasoup工作线程
    */
-  private getMediasoupWorker() {
+  getMediasoupWorker() {
     const worker = this.workers[this.nextMediasoupWorkerIdx];
 
     if (++this.nextMediasoupWorkerIdx === this.workers.length)
@@ -147,11 +161,11 @@ export default class MediaService {
   /**
    * 创建mediasoup工作线程
    */
-  private async createWorkers() {
+  async createWorkers() {
     let { numWorkers } = config.mediasoup; //从配置文件中获取工作线程数
 
     for (let i = 0; i < numWorkers; i++) {
-      let worker = await mediasoup.createWorker({
+      let worker = await createWorker({
         logLevel: config.mediasoup.worker.logLevel as types.WorkerLogLevel,
         logTags: config.mediasoup.worker.logTags as types.WorkerLogTag[],
         rtcMinPort: config.mediasoup.worker.rtcMinPort,
@@ -176,3 +190,7 @@ export default class MediaService {
     }
   }
 }
+
+const mediaService=new MediaService()
+export { MediaService};
+export {mediaService};

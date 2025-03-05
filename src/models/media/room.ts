@@ -13,10 +13,13 @@ export default class Room {
     public worker: types.Worker,
     public userId: string
   ) {
-    this.mediaCodecs = config.mediasoup.router.mediaCodecs;
+    let mediaCodecs:any = config.mediasoup.router.mediaCodecs;
     this.worker
-      .createRouter(this.mediaCodecs)
-      .then((router) => (this.router = router));
+      .createRouter({mediaCodecs})
+      .then((router) => {
+        this.router = router
+        console.log('-----------------rtp-------------------',this.router.rtpCapabilities)
+      });
   }
 
   addPeer(peer: Peer) {
@@ -37,7 +40,9 @@ export default class Room {
   }
 
   getRtpCapabilities() {
-    return this.router.rtpCapabilities;
+    let rtpCapabilities=this.router.rtpCapabilities;
+    console.log('-------------------------------',rtpCapabilities)
+    return rtpCapabilities;
   }
 
   async createWebRtcTransport(userId: string) {
@@ -83,6 +88,20 @@ export default class Room {
   async connectPeerTransport(userId:string , transportId:string, dtlsParameters:unknown ) {
     await this.peers.get(userId)!.connectTransport(transportId, dtlsParameters)
   }
+
+  async produce(userId:string,producerTransportId:string, rtpParameters:types.RtpParameters, kind:types.MediaKind){
+    return new Promise(async (resolve, reject) => {
+      let producer=await this.peers.get(userId)!.createProducer(producerTransportId, rtpParameters, kind)
+      resolve(producer.id)
+      //TODO:广播有新的生产者
+      //broadCast(userid, 'producer', data)
+    });
+  }
+  // broadCast(userid:string, , data) {
+  //   for (let otherID of Array.from(this.peers.keys()).filter((id) => id !== socket_id)) {
+  //     this.send(otherID, name, data)
+  //   }
+  // }
 
   // async consume(consumeReq: ConsumeReq, userId: string) {
   //   // handle nulls
