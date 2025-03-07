@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import {MediaService,mediaService} from '../services/mediaService'
-import { ConnectTransportReq,ProduceReq} from '../models/req/mediaReq'
+import { ConnectTransportReq,ProduceReq,ConsumeReq} from '../models/req/mediaReq'
 import MyError from '../common/myError'
 export default class MediaController {
     mediaService:MediaService=mediaService
@@ -63,6 +63,32 @@ export default class MediaController {
 
     getProducers(req: Request, res: Response){
         const userId=req.headers['userId'] as string
-        this.mediaService.getProducers(userId)
+        return res.json(this.mediaService.getProducers(userId))
+    }
+
+    async consume(req: Request, res: Response,next:NextFunction){
+        const userId=req.headers['userId'] as string
+        try{
+            let consumerTransportId=req.body.consumerTransportId
+            let producerId=req.body.producerId
+            let rtpCapabilities=req.body.rtpCapabilities
+            let consumeReq=new ConsumeReq(consumerTransportId,producerId,rtpCapabilities)
+            return res.json(await this.mediaService.consume(consumeReq,userId))
+        }catch(err){
+            next(err)
+        }
+    }
+
+    getStatus(req: Request, res: Response) {
+        const userId=req.headers['userId'] as string
+        return res.json(this.mediaService.getStatus(userId))
+    }
+    async getRouterStatus(req: Request, res: Response, next: NextFunction) {
+        const userId=req.headers['userId'] as string
+        try{
+            return res.json(await this.mediaService.getRouterStatus(userId))
+        }catch(err){
+            next(err)
+        }
     }
 }

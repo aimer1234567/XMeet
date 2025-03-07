@@ -4,6 +4,7 @@ import { ConsumeReq } from "../req/mediaReq";
 import config from "../../common/config/config";
 import { ErrorEnum } from "../../common/enums/errorEnum";
 import Result from "../../common/result";
+import MyError from "../../common/myError";
 export default class Room {
   peers = new Map<string, Peer>();
   mediaCodecs: any;
@@ -13,23 +14,23 @@ export default class Room {
     public worker: types.Worker,
     public userId: string
   ) {
-    let mediaCodecs:any = config.mediasoup.router.mediaCodecs;
-    this.worker
-      .createRouter({mediaCodecs})
-      .then((router) => {
-        this.router = router
-        console.log('-----------------rtp-------------------',this.router.rtpCapabilities)
-      });
+    let mediaCodecs: any = config.mediasoup.router.mediaCodecs;
+    this.worker.createRouter({ mediaCodecs }).then((router) => {
+      this.router = router;
+    });
   }
 
   addPeer(peer: Peer) {
     this.peers.set(peer.peerId, peer);
   }
-  getProducerListForPeer() {
+  getProducerListForPeer(userId: string) {
     let producerList = new Array<{}>();
     //获取这个房间的所有用户
     this.peers.forEach((peer) => {
       //获取用户的所有生产者·
+      if(userId===peer.peerId){
+        return
+      }
       peer.producers.forEach((producer) => {
         producerList.push({
           producerId: producer.id,
@@ -38,10 +39,10 @@ export default class Room {
     });
     return producerList;
   }
+  
 
   getRtpCapabilities() {
-    let rtpCapabilities=this.router.rtpCapabilities;
-    console.log('-------------------------------',rtpCapabilities)
+    let rtpCapabilities = this.router.rtpCapabilities;
     return rtpCapabilities;
   }
 
@@ -85,14 +86,25 @@ export default class Room {
     };
   }
 
-  async connectPeerTransport(userId:string , transportId:string, dtlsParameters:unknown ) {
-    await this.peers.get(userId)!.connectTransport(transportId, dtlsParameters)
+  async connectPeerTransport(
+    userId: string,
+    transportId: string,
+    dtlsParameters: unknown
+  ) {
+    await this.peers.get(userId)!.connectTransport(transportId, dtlsParameters);
   }
 
-  async produce(userId:string,producerTransportId:string, rtpParameters:types.RtpParameters, kind:types.MediaKind){
+  async produce(
+    userId: string,
+    producerTransportId: string,
+    rtpParameters: types.RtpParameters,
+    kind: types.MediaKind
+  ) {
     return new Promise(async (resolve, reject) => {
-      let producer=await this.peers.get(userId)!.createProducer(producerTransportId, rtpParameters, kind)
-      resolve(producer.id)
+      let producer = await this.peers
+        .get(userId)!
+        .createProducer(producerTransportId, rtpParameters, kind);
+      resolve(producer.id);
       //TODO:广播有新的生产者
       //broadCast(userid, 'producer', data)
     });
@@ -102,42 +114,26 @@ export default class Room {
   //     this.send(otherID, name, data)
   //   }
   // }
-
-  // async consume(consumeReq: ConsumeReq, userId: string) {
-  //   // handle nulls
-  //   if (
-  //     !this.router.canConsume({
-  //       producerId: consumeReq.producerId,
-  //       rtpCapabilities: consumeReq.rtpCapabilities,
-  //     })
-  //   ) {
-  //     console.error("can not consume", { producerId: consumeReq.producerId });
-  //     return;
-  //   }
-
-  //   let { consumer, params } = await this.peers
-  //     .get(userId)!
-  //     .createConsumer(
-  //       consumeReq.consumerTransportId,
-  //       consumeReq.producerId,
-  //       consumeReq.rtpCapabilities
-  //     );
-
-  //   consumer.on(
-  //     "producerclose",
-  //     function () {
-  //       console.log("Consumer closed due to producerclose event", {
-  //         name: `${this.peers.get(socket_id).name}`,
-  //         consumer_id: `${consumer.id}`,
-  //       });
-  //       this.peers.get(socket_id).removeConsumer(consumer.id);
-  //       // tell client consumer is dead
-  //       this.io.to(socket_id).emit("consumerClosed", {
-  //         consumer_id: consumer.id,
-  //       });
-  //     }.bind(this)
-  //   );
-
-  //   return params;
-  // }
+  async consume(
+    userId: string,
+    consumerTransportId:string ,
+    producerId:string ,
+    rtpCapabilities:types.RtpCapabilities
+  ) {
+    console.error(`${userId}:消费生产者${producerId}`)
+    if (
+      !this.router.canConsume({
+        producerId: producerId,
+        rtpCapabilities: rtpCapabilities,
+      })
+    ) {
+      throw new MyError("不能消费");
+    }
+    let {consumer,params}=await this.peers.get(userId)!.createConsumer(
+      consumerTransportId,
+      producerId,
+      rtpCapabilities
+    );
+    return params
+  }
 }

@@ -54,8 +54,8 @@ async function init() {
     });
   const server = http.createServer( app); //创建http服务器
   const wss = new WebSocket.Server({ server });
-  server.listen(443, () => {
-    console.log("server is running on port 8080");
+  server.listen(443, '0.0.0.0',() => {
+    console.log("server is running on port 443");
   });
 }
 

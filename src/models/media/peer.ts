@@ -1,84 +1,89 @@
 import { types } from "mediasoup";
-export default class Peer{
-    producers=new Map<string,types.Producer>()
-    transports=new Map<string,types.Transport>()
-    constructor(
-        public peerId:string,
-    ){}
+import { todo } from "node:test";
+export default class Peer {
+  producers = new Map<string, types.Producer>();
+  consumers = new Map<string, types.Consumer>();
+  transports = new Map<string, types.Transport>();
+  constructor(public peerId: string) {}
 
-    getProducer(producerId:string){
-        return this.producers.get(producerId)
-    }
-    addTransport(transport:types.Transport) {
-      this.transports.set(transport.id, transport)
-    }
+  getProducer(producerId: string) {
+    return this.producers.get(producerId);
+  }
+  addTransport(transport: types.Transport) {
+    this.transports.set(transport.id, transport);
+  }
 
-    async connectTransport(transportId:string, dtlsParameters:unknown) {
-      if (!this.transports.has(transportId)) return
-      await this.transports.get(transportId)!.connect({
-        dtlsParameters: dtlsParameters
-      })
-    }
-    
-    async createProducer(producerTransportId:string, rtpParameters:types.RtpParameters, kind:types.MediaKind){
-      let producer:types.Producer = await this.transports.get(producerTransportId)!.produce({
-        kind,rtpParameters
-      })
-      this.producers.set(producer.id, producer)
-      producer.on(
-        'transportclose',
-        () => {
-          console.log('Producer transport close', { name: `${this.peerId}`, consumer_id: `${producer.id}` })
-          producer.close()
-          this.producers.delete(producer.id)
-        }
-      )
-      return producer
-    }
+  async connectTransport(transportId: string, dtlsParameters: unknown) {
+    if (!this.transports.has(transportId)) {
+      console.log(`transport not found -------------${transportId}`);
+      return;}
+    await this.transports.get(transportId)!.connect({
+      dtlsParameters: dtlsParameters,
+    });
+  }
 
-    // async createConsumer(consumer_transport_id:string, producer_id:string , rtpCapabilities:string) {
-    //     let consumerTransport = this.transports.get(consumer_transport_id)
-    
-    //     let consumer = null
-    //     try {
-    //       consumer = await consumerTransport.consume({
-    //         producerId: producer_id,
-    //         rtpCapabilities,
-    //         paused: false //producer.kind === 'video',
-    //       })
-    //     } catch (error) {
-    //       console.error('Consume failed', error)
-    //       return
-    //     }
-    
-    //     if (consumer.type === 'simulcast') {
-    //       await consumer.setPreferredLayers({
-    //         spatialLayer: 2,
-    //         temporalLayer: 2
-    //       })
-    //     }
-    
-    //     this.consumers.set(consumer.id, consumer)
-    
-    //     consumer.on(
-    //       'transportclose',
-    //       function () {
-    //         console.log('Consumer transport close', { name: `${this.name}`, consumer_id: `${consumer.id}` })
-    //         this.consumers.delete(consumer.id)
-    //       }.bind(this)
-    //     )
-    
-    //     return {
-    //       consumer,
-    //       params: {
-    //         producerId: producer_id,
-    //         id: consumer.id,
-    //         kind: consumer.kind,
-    //         rtpParameters: consumer.rtpParameters,
-    //         type: consumer.type,
-    //         producerPaused: consumer.producerPaused
-    //       }
-    //     }
-    //   }
-
+  async createProducer(
+    producerTransportId: string,
+    rtpParameters: types.RtpParameters,
+    kind: types.MediaKind
+  ) {
+    let producer: types.Producer = await this.transports
+      .get(producerTransportId)!
+      .produce({
+        kind,
+        rtpParameters,
+      });
+      console.error("生产者id",producer.id)
+    this.producers.set(producer.id, producer);
+    producer.on("transportclose", () => {
+      console.log("Producer transport close", {
+        name: `${this.peerId}`,
+        consumer_id: `${producer.id}`,
+      });
+      producer.close();
+      this.producers.delete(producer.id);
+    });
+    return producer;
+  }
+  async createConsumer(
+    consumerTransportId: string,
+    producerId: string,
+    rtpCapabilities: types.RtpCapabilities
+  ) {
+    let consumerTransport = this.transports.get(consumerTransportId);
+    let consumer = null;
+    try {
+      consumer = await consumerTransport!.consume({
+        producerId: producerId,
+        rtpCapabilities: rtpCapabilities,
+        paused: false,
+      });
+    } catch (error) {
+      throw new Error("无法消费");
+    }
+    this.consumers.set(consumer.id, consumer);
+    consumer.on("transportclose", () => {
+      console.log("consumer transport close", {
+        name: `${this.peerId}`,
+        consumerId: `${consumer.id}`,
+      });
+      consumer.close();
+      this.consumers.delete(consumer.id);
+    });
+    consumer.on("producerclose", () => {
+      this.consumers.delete(consumer.id);
+      // TODO:  通过ws,告诉客户端删除该消费者
+    });
+    return {
+      consumer,
+      params: {
+        producerId,
+        id: consumer.id,
+        kind: consumer.kind,
+        rtpParameters: consumer.rtpParameters,
+        type: consumer.type,
+        producerPaused: consumer.producerPaused,
+      },
+    };
+  }
 }

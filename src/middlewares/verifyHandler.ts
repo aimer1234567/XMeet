@@ -10,7 +10,7 @@ export default function verifyHandler(
   next: NextFunction
 ) {
   const reqURL=req.url
-  console.log(reqURL)
+  console.log(`-------------------${reqURL}------------`)
   if(reqURL==='/user/login'){
     return next()
   }
@@ -23,7 +23,6 @@ export default function verifyHandler(
   try{
     let decoded = jwt.verify(token, config.jwt,{ignoreExpiration:false,algorithms:["HS256"]}) as JwtPayload;
     if (decoded && decoded.userId){
-        console.log("decoded",decoded)
         req.headers['userId'] = decoded.userId; //传递用户的标识
     }
     return next();

@@ -22,7 +22,7 @@ class MediaService {
 
   createRoom(roomId: string, userId: string) {
     if (this.roomList.has(roomId)) {
-      throw new MyError(ErrorEnum.RoomIsExist);
+      return Result.succuss({ isRoom: false, roomId: roomId })// TODO: 用于测试
     } else {
       console.log("create room", roomId);
       let worker = this.getMediasoupWorker();
@@ -123,6 +123,7 @@ class MediaService {
       userId,
       id:producerId
     })
+    console.log("生产者id",{userId,producerId})
     return Result.succuss(producerId)
   }
   /**
@@ -135,18 +136,10 @@ class MediaService {
     if (!roomId) {
       return Result.error(ErrorEnum.RoomNotExist);
     }
-    console.log("getProducers:", { name: userId, roomId });
-    let producerList = this.roomList.get(roomId)?.getProducerListForPeer();
+    let producerList = this.roomList.get(roomId)!.getProducerListForPeer(userId);
+    console.log("getProducers:", { userId, roomId, producerList });
     return Result.succuss(producerList);
   }
-
-  // async consume(ConsumeReq:ConsumeReq,userId:string){
-  //   let roomId=this.userIdToRoomId.get(userId);
-  //   if (!roomId){
-  //     return Result.error(ErrorEnum.RoomNotExist);
-  //   }
-  //   await this.roomList.get(roomId).
-  // }
   /**
    * @returns mediasoup工作线程
    */
@@ -189,8 +182,39 @@ class MediaService {
               }, 120000);*/
     }
   }
+  
+  async consume(ConsumeReq:ConsumeReq,userId:string){
+    let roomId=this.userIdToRoomId.get(userId);
+    if (!roomId){
+      return Result.error(ErrorEnum.RoomNotExist);
+    }
+    let params = await this.roomList.get(roomId)!.consume(userId,ConsumeReq.consumerTransportId,ConsumeReq.producerId,ConsumeReq.rtpCapabilities);
+    return Result.succuss(params);
+  }
+
+  getStatus(userId:string){
+    let roomId=this.userIdToRoomId.get(userId);
+    if (!roomId){
+      return Result.error(ErrorEnum.RoomNotExist);
+    }
+    let transportIds=this.roomList.get(roomId)!.peers.get(userId)!.transports.keys()
+    let producerIds=this.roomList.get(roomId)!.peers.get(userId)!.producers.keys()
+    let consumerIds=this.roomList.get(roomId)!.peers.get(userId)!.consumers.keys()
+    console.log({ userId,transportIds,producerIds,consumerIds })
+    return Result.succuss();
+  }
+
+  async getRouterStatus(userId:string){
+    let roomId=this.userIdToRoomId.get(userId);
+    if (!roomId){
+      return Result.error(ErrorEnum.RoomNotExist);
+    }
+    let params=await this.roomList.get(roomId)!.router.dump()
+    console.log({roomId,params})
+    return Result.succuss();
+  }
 }
 
 const mediaService=new MediaService()
-export { MediaService};
+export {MediaService};
 export {mediaService};
