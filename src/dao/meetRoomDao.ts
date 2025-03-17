@@ -1,0 +1,35 @@
+import AppDataSource from "../common/config/database";
+import MyError from "../common/myError";
+import MeetRoom from "../models/entity/meetRoom";
+import { QueryFailedError } from "typeorm";
+export default class MeetRoomDao {
+  private meetRoomRepository = AppDataSource.getRepository(MeetRoom);
+  private meetRoomQueryBuilder = this.meetRoomRepository.createQueryBuilder();
+  async addMeetRoom(meetRoom: MeetRoom) {
+    try{
+          const { identifiers }=await this.meetRoomQueryBuilder.insert().into(MeetRoom).values(meetRoom).execute();
+          return identifiers
+    }catch(err){
+      if(err instanceof QueryFailedError){
+          console.log(err.driverError)
+          throw new MyError(err.message)
+      }
+    }
+  }
+
+  async getMeetRoomById(id:string){
+    let meetRoom
+    try{
+      meetRoom=await this.meetRoomRepository.findOneBy({id:id})
+    }catch(err){
+      if(err instanceof QueryFailedError){
+          console.log(err.driverError)
+          throw new MyError(err.message)
+      }
+    }
+    if(!meetRoom){
+      throw new MyError(`MeetRoom with id ${id} not found`)
+    }
+    return meetRoom
+  }
+}

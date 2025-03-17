@@ -15,6 +15,7 @@ const getLocalIp = () => {
   })
   return localIp
 }
+
 export default {
     jwt:"dswdwqdqd",
     mailUtils: {
@@ -27,6 +28,15 @@ export default {
             subject:"XMeet",// 邮件主题
             text:"Hello, this is a XMeet."// 邮件文本内容
         }
+    },
+    webServer:{
+      isHttps:true,
+      port:8080,
+      host:"0.0.0.0",
+      https:{
+        key:"./ssl/private.key",
+        cert:"./ssl/certificate.crt"
+      }
     },
     mediasoup: {
         // Worker settings

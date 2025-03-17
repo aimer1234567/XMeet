@@ -2,10 +2,9 @@ import NodeCache from "node-cache";
 import MailUtils from "../common/utils/mailUtils";
 import Result from "../common/result";
 import generateCaptcha from "../common/utils/generateCaptcha";
-import UserRegisterReq from "../models/req/user/registerReq";
 import AppDataSource from "../common/config/database";
 import User from "../models/entity/user";
-import LoginReq from "../models/req/user/loginReq";
+import {LoginReq,UserRegisterReq} from "../models/req/userReq";
 import UserDao from "../dao/userDao";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import jwt from "jsonwebtoken";
@@ -36,6 +35,7 @@ export default class UserService {
         userRegisterReq.email,
         userRegisterReq.password,
         userRegisterReq.userName
+        ,userRegisterReq.name
       );
       await AppDataSource.manager.save(user);
       return Result.succuss();

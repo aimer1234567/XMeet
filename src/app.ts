@@ -8,30 +8,30 @@ import errorHandler from "./middlewares/errorHandler";
 import sourceMapSupport from "source-map-support";
 import WebSocket = require("ws");
 import https from "https";
-import http from "http"
-import {MediaService,mediaService} from './services/mediaService'
+import http from "http";
+import { MediaService, mediaService } from "./services/mediaService";
 import mediaRouter from "./routes/mediaRouter";
 import verifyHandler from "./middlewares/verifyHandler";
 import cors from "cors";
 import fs from "fs";
-import Room from "./models/media/room";
+import config from "./common/config/config";
 
 async function init() {
-  await mediaService.createWorkers();
-  new Room("room1", mediaService.getMediasoupWorker(), "user1");
+  await AppDataSource.initialize()
+  .then(() => {
+    console.log("数据库初始化");
+  })
+  .catch((err) => {
+    console.error("Error during Data Source initialization", err);
+  });
+  await mediaService.createWorkers(); //初始化mediasoup工作线程
   const options = {
-    key: fs.readFileSync("./ssl/key.pem", "utf-8"),
-    cert: fs.readFileSync("./ssl/cert.pem", "utf-8"),
+    key: fs.readFileSync(config.webServer.https.key, "utf-8"),
+    cert: fs.readFileSync(config.webServer.https.cert, "utf-8"),
   };
   sourceMapSupport.install(); //在运行js文件时可以直接调试ts文件
   const app = express(); //创建express实例
-  app.use(cors());
-  expressOasGenerator.init(app);
-  app.use(express.json());
-  // 设置 Swagger UI 来展示 API 文档
-  app.get("/f", (req, res) => {
-    res.json("sadawdwqad");
-  });
+  expressOasGenerator.init(app); // 设置 Swagger UI 来展示 API 文档
   app.use(
     "/api-docs",
     swaggerUi.serve,
@@ -41,24 +41,31 @@ async function init() {
       },
     })
   );
+  app.use(cors());
+  app.use(express.json());
   app.use(verifyHandler);
   app.use("/media", mediaRouter);
   app.use("/user", userRouter);
+  import("./routes/meetRoomRouter").then((meetRoomRouter)=>{
+    app.use("/meetRoom",meetRoomRouter.default)
+  })
   app.use(errorHandler);
-  AppDataSource.initialize()
-    .then(() => {
-      console.log("数据库初始化");
-    })
-    .catch((err) => {
-      console.error("Error during Data Source initialization", err);
-    });
-  const server = http.createServer( app); //创建http服务器
+  let server;
+  if (config.webServer.isHttps) {
+    server = https.createServer(options, app);
+  } else {
+    server = http.createServer(app);
+  }
   const wss = new WebSocket.Server({ server });
-  server.listen(443, '0.0.0.0',() => {
-    console.log("server is running on port 443");
+  server.listen(config.webServer.port, config.webServer.host, () => {
+    console.log(
+      `server is running on ${
+        config.webServer.isHttps
+          ? `https://${config.webServer.host}:${config.webServer.port}`
+          : `https://${config.webServer.host}:${config.webServer.port}`
+      }`
+    );
   });
 }
 
 init();
-
-

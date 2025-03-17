@@ -1,8 +1,8 @@
 import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
-@Entity()
+@Entity({name:"user"})
 export default class User {
-    @PrimaryGeneratedColumn()
-    id!: number;
+    @PrimaryGeneratedColumn({type: "bigint"})
+    id!: string;
 
     @Column()
     email: string
@@ -10,12 +10,16 @@ export default class User {
     @Column()
     password: string
 
-    @Column()
+    @Column({name:"username"})
     userName: string
 
-    constructor(email: string, password: string, userName: string) {
+    @Column()
+    name:string
+
+    constructor(email: string, password: string, userName: string,name:string) {
         this.email = email;
         this.password = password;
         this.userName = userName;
+        this.name=name;
       }
 }
