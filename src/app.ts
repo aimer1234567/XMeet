@@ -15,6 +15,7 @@ import verifyHandler from "./middlewares/verifyHandler";
 import cors from "cors";
 import fs from "fs";
 import config from "./common/config/config";
+import {webSocketServer} from "./webSocket/webSocketServer";
 
 async function init() {
   await AppDataSource.initialize()
@@ -51,12 +52,14 @@ async function init() {
   })
   app.use(errorHandler);
   let server;
+  let wss
   if (config.webServer.isHttps) {
     server = https.createServer(options, app);
+    webSocketServer.init(server)
   } else {
     server = http.createServer(app);
+    webSocketServer.init(server)
   }
-  const wss = new WebSocket.Server({ server });
   server.listen(config.webServer.port, config.webServer.host, () => {
     console.log(
       `server is running on ${

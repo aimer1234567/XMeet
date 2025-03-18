@@ -24,7 +24,7 @@ export default class Room {
     this.peers.set(peer.peerId, peer);
   }
   getProducerListForPeer(userId: string) {
-    let producerList = new Array<{}>();
+    let producerList = new Array<{producerId:string}>();
     //获取这个房间的所有用户
     this.peers.forEach((peer) => {
       //获取用户的所有生产者·

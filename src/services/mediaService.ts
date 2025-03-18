@@ -7,6 +7,7 @@ import Peer from "../models/media/peer";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import { ConsumeReq, ConnectTransportReq,ProduceReq } from "../models/req/mediaReq";
 import MyError from "../common/myError";
+import {webSocketServer} from "../webSocket/webSocketServer";
 class MediaService {
   roomList: Map<string, Room> = new Map(); //房间列表
   workers: Array<types.Worker<types.AppData>> = []; //mediasoup工作线程
@@ -118,6 +119,12 @@ class MediaService {
       return Result.error(ErrorEnum.RoomNotExist);
     }
     let producerId =await this.roomList.get(roomId)!.produce(userId,produceReq.producerTransportId,produceReq.rtpParameters,produceReq.kind);
+    this.roomList.get(roomId)!.peers.forEach((peer)=>{
+      if(peer.peerId===userId){
+        return
+      }
+      webSocketServer.send(peer.peerId,'newProducers',{producerId})
+    })
     console.log('produce',{
       type:produceReq.kind,
       userId,
