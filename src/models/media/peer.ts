@@ -1,5 +1,6 @@
 import { types } from "mediasoup";
 import { todo } from "node:test";
+import { webSocketServer } from "../../webSocket/webSocketServer";
 export default class Peer {
   producers = new Map<string, types.Producer>();
   consumers = new Map<string, types.Consumer>();
@@ -46,6 +47,7 @@ export default class Peer {
     return producer;
   }
   async createConsumer(
+    userId: string,
     consumerTransportId: string,
     producerId: string,
     rtpCapabilities: types.RtpCapabilities
@@ -71,7 +73,11 @@ export default class Peer {
       this.consumers.delete(consumer.id);
     });
     consumer.on("producerclose", () => {
+      this.consumers.get(consumer.id)?.close()
       this.consumers.delete(consumer.id);
+      webSocketServer.send(userId,"consumerClosed",{
+        consumerId: consumer.id,kind:consumer.kind
+      })
       // TODO:  通过ws,告诉客户端删除该消费者
     });
     return {
@@ -85,5 +91,19 @@ export default class Peer {
         producerPaused: consumer.producerPaused,
       },
     };
+  }
+  closeProducer(producerId:string){
+    try{
+      this.producers.get(producerId)!.close();
+    }catch(e){
+      console.error(e)
+    }
+    this.producers.delete(producerId);
+  }
+
+  close(){
+    this.transports.forEach((transport)=>{
+      transport.close()
+    })
   }
 }

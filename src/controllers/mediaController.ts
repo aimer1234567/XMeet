@@ -54,7 +54,7 @@ export default class MediaController {
             let kind=req.body.kind
             let rtpParameters=req.body.rtpParameters
             let produceReq=new ProduceReq(producerTransportId,kind,rtpParameters)
-            let result=mediaService.produce(produceReq,userId)
+            let result=await mediaService.produce(produceReq,userId)
             return res.json(result)
         }catch(err){
             next(err)
@@ -77,6 +77,11 @@ export default class MediaController {
         }catch(err){
             next(err)
         }
+    }
+    closeProducer(req: Request, res: Response){
+        const userId=req.headers['userId'] as string
+        const producerId=req.body.producerId
+        return res.json(mediaService.closeProducer(userId,producerId))
     }
 
     getStatus(req: Request, res: Response) {

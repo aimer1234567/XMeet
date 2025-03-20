@@ -25,7 +25,7 @@ async function init() {
   .catch((err) => {
     console.error("Error during Data Source initialization", err);
   });
-  await mediaService.createWorkers(); //初始化mediasoup工作线程
+  await mediaService.init(); //初始化mediasoup工作线程
   const options = {
     key: fs.readFileSync(config.webServer.https.key, "utf-8"),
     cert: fs.readFileSync(config.webServer.https.cert, "utf-8"),

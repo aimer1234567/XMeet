@@ -6,10 +6,12 @@ import config from "../common/config/config";
 import MyError from "../common/myError";
 import { ErrorEnum } from "../common/enums/errorEnum";
 
+
 export class WebSocketServer {
   io?: SocketIOServer;
-  wsList: Map<string, Socket> = new Map(); // 存储用户ID对应的socket实例
+  wsMap: Map<string, Socket> = new Map(); // 存储用户ID对应的socket实例
   isInit: boolean = false;
+  private disconnectFunction: Array<(userId:string)=> void> = new Array();
 
   init(server: httpsServer | httpServer) {
     this.io = new SocketIOServer(server, {
@@ -21,7 +23,7 @@ export class WebSocketServer {
     this.io.use((socket, next) => {
       const token = socket.handshake.auth?.token; // 通过 auth 获取 token
       if (!token) {
-        return next(new Error("Unauthorized"));
+        return next(new MyError(ErrorEnum.VerifyError));
       }
       try {
         const decoded = jwt.verify(token, config.jwt, {
@@ -30,11 +32,11 @@ export class WebSocketServer {
         }) as JwtPayload;
         if (decoded && decoded.userId) {
           socket.data.userId = decoded.userId; // 存储用户ID
-          this.wsList.set(decoded.userId, socket); // 记录用户的 socket
+          this.wsMap.set(decoded.userId, socket); // 记录用户的 socket
           return next();
         }
       } catch (err) {
-        return next(new Error("Unauthorized"));
+        return next(new Error(ErrorEnum.VerifyError));
       }
     });
 
@@ -43,12 +45,10 @@ export class WebSocketServer {
 
       socket.on("disconnect", () => {
         console.log(`${socket.data.userId} 断开连接`);
-        this.wsList.delete(socket.data.userId);
-      });
-
-      socket.on("message", (data) => {
-        console.log(`收到来自 ${socket.data.userId} 的消息:`, data);
-        socket.emit("message", `服务器收到你的消息: ${data}`);
+        this.disconnectFunction.forEach((func)=>{
+          func(socket.data.userId)
+        })
+        this.wsMap.delete(socket.data.userId);
       });
     });
   }
@@ -56,11 +56,15 @@ export class WebSocketServer {
   send(userId: string,api:string , data: any) {
     if (!this.isInit) throw new MyError(ErrorEnum.WebSocketServerNotInit);
 
-    const socket = this.wsList.get(userId);
+    const socket = this.wsMap.get(userId);
     if (!socket) {
       throw new MyError(ErrorEnum.UserIsNone);
     }
     socket.emit(api,data); // 使用 socket.io 发送消息
+  }
+
+  OnDisconnect(func:(userId:string)=> void ){
+    this.disconnectFunction.push(func)
   }
 }
 

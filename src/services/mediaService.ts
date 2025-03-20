@@ -161,9 +161,8 @@ class MediaService {
   /**
    * 创建mediasoup工作线程
    */
-  async createWorkers() {
+  async init() {
     let { numWorkers } = config.mediasoup; //从配置文件中获取工作线程数
-
     for (let i = 0; i < numWorkers; i++) {
       let worker = await createWorker({
         logLevel: config.mediasoup.worker.logLevel as types.WorkerLogLevel,
@@ -180,6 +179,13 @@ class MediaService {
         setTimeout(() => process.exit(1), 2000);
       });
       this.workers.push(worker);
+    webSocketServer.OnDisconnect((userId) => {
+    let roomId = this.userIdToRoomId.get(userId);
+    if(!roomId){
+      return;
+    }
+    this.roomList.get(roomId)?.deletePeer(userId)
+})
 
       // log worker resource usage
       /*setInterval(async () => {
@@ -197,6 +203,14 @@ class MediaService {
     }
     let params = await this.roomList.get(roomId)!.consume(userId,ConsumeReq.consumerTransportId,ConsumeReq.producerId,ConsumeReq.rtpCapabilities);
     return Result.succuss(params);
+  }
+  closeProducer(userId:string,producerId:string){
+    let roomId=this.userIdToRoomId.get(userId);
+    if (!roomId){
+      return Result.error(ErrorEnum.RoomNotExist);
+    }
+    this.roomList.get(roomId)!.closeProducer(userId,producerId)
+    return Result.succuss();
   }
 
   getStatus(userId:string){
@@ -218,7 +232,7 @@ class MediaService {
     }
     let params=await this.roomList.get(roomId)!.router.dump()
     console.log({roomId,params})
-    return Result.succuss();
+    return Result.succuss(params);
   }
 }
 

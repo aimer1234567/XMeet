@@ -1,21 +1,19 @@
 import { types } from "mediasoup";
 import Peer from "./peer";
-import { ConsumeReq } from "../req/mediaReq";
 import config from "../../common/config/config";
 import { ErrorEnum } from "../../common/enums/errorEnum";
-import Result from "../../common/result";
 import MyError from "../../common/myError";
 export default class Room {
   peers = new Map<string, Peer>();
-  mediaCodecs: any;
+  mediaCodecs!: types.RtpCodecCapability[];
   router!: types.Router;
   constructor(
     public roomId: string,
     public worker: types.Worker,
-    public userId: string
+    public roomMaster: string
   ) {
-    let mediaCodecs: any = config.mediasoup.router.mediaCodecs;
-    this.worker.createRouter({ mediaCodecs }).then((router) => {
+    this.mediaCodecs= config.mediasoup.router.mediaCodecs as types.RtpCodecCapability[]
+    this.worker.createRouter({ mediaCodecs:this.mediaCodecs }).then((router) => {
       this.router = router;
     });
   }
@@ -130,10 +128,20 @@ export default class Room {
       throw new MyError("不能消费");
     }
     let {consumer,params}=await this.peers.get(userId)!.createConsumer(
+      userId,
       consumerTransportId,
       producerId,
       rtpCapabilities
     );
     return params
+  }
+  deletePeer(userId:string){
+    let peer=this.peers.get(userId)
+    peer?.close()
+    this.peers.delete(userId)
+  }
+
+  closeProducer(userId:string,producerId:string){
+    this.peers.get(userId)!.closeProducer(producerId);
   }
 }
