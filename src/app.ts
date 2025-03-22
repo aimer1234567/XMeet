@@ -16,8 +16,9 @@ import cors from "cors";
 import fs from "fs";
 import config from "./common/config/config";
 import {webSocketServer} from "./webSocket/webSocketServer";
-
+import { speechRecognition } from "./common/utils/speechRecognition";
 async function init() {
+  speechRecognition.init()
   await AppDataSource.initialize()
   .then(() => {
     console.log("数据库初始化");

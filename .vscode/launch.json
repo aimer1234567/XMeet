@@ -6,10 +6,10 @@
         "type": "node",
         "request": "launch",
         "skipFiles": ["<node_internals>/**"],
-        "program": "${workspaceFolder}/build/index.js", // 运行生成的 JavaScript 文件
+        "program": "${workspaceFolder}/build/src/index.js", // 运行生成的 JavaScript 文件
         "preLaunchTask": "tsc: build - tsconfig.json", // 在启动前编译 TypeScript
         "outFiles": [
-          "${workspaceFolder}/build/**/*.js" // 调试时的输出 JavaScript 文件
+          "${workspaceFolder}/build/src/**/*.js" // 调试时的输出 JavaScript 文件
         ],
         "sourceMaps": true, // 启用源映射
         "smartStep": true // 智能跳过非源代码的代码

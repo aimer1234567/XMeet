@@ -5,14 +5,15 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../common/config/config";
 import MyError from "../common/myError";
 import { ErrorEnum } from "../common/enums/errorEnum";
+import { speechRecognition } from "../common/utils/speechRecognition";
 
-
+type MESSAGE_EVENT="speech"
 export class WebSocketServer {
   io?: SocketIOServer;
   wsMap: Map<string, Socket> = new Map(); // 存储用户ID对应的socket实例
   isInit: boolean = false;
   private disconnectFunction: Array<(userId:string)=> void> = new Array();
-
+  private messageFunction:Map<string,(ws:Socket)=>void>=new Map();
   init(server: httpsServer | httpServer) {
     this.io = new SocketIOServer(server, {
       cors: { origin: "*" }, // 允许跨域
@@ -42,7 +43,7 @@ export class WebSocketServer {
 
     this.io.on("connection", (socket) => {
       console.log(`${socket.data.userId} socket 连接成功`);
-
+      speechRecognition.init1(socket.data.userId);
       socket.on("disconnect", () => {
         console.log(`${socket.data.userId} 断开连接`);
         this.disconnectFunction.forEach((func)=>{
@@ -50,6 +51,11 @@ export class WebSocketServer {
         })
         this.wsMap.delete(socket.data.userId);
       });
+
+      socket.on("speech",(speech)=>{
+        console.log(speech)
+        speechRecognition.rec(socket.data.userId,speech)
+      })
     });
   }
 
@@ -65,6 +71,9 @@ export class WebSocketServer {
 
   OnDisconnect(func:(userId:string)=> void ){
     this.disconnectFunction.push(func)
+  }
+  OnMessage(message:MESSAGE_EVENT ,func:(ws:Socket)=> void){
+    this.messageFunction.set(message,func)
   }
 }
 

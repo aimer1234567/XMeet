@@ -38,6 +38,10 @@ export default {
         cert:"./ssl/certificate.crt"
       }
     },
+    speechRecognition:{
+      modelPath:"speech_model/cn_model/",
+      sampleRate:16000
+    },
     mediasoup: {
         // Worker settings
         numWorkers: Object.keys(os.cpus()).length,
