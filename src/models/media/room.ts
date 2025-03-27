@@ -103,15 +103,8 @@ export default class Room {
         .get(userId)!
         .createProducer(producerTransportId, rtpParameters, kind);
       resolve(producer.id);
-      //TODO:广播有新的生产者
-      //broadCast(userid, 'producer', data)
     });
   }
-  // broadCast(userid:string, , data) {
-  //   for (let otherID of Array.from(this.peers.keys()).filter((id) => id !== socket_id)) {
-  //     this.send(otherID, name, data)
-  //   }
-  // }
   async consume(
     userId: string,
     consumerTransportId:string ,

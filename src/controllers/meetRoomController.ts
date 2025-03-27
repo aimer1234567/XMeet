@@ -19,7 +19,8 @@ export default class MeetRoomController {
         const userId=req.headers['userId'] as string
         try{
             const meetRoomId=req.body.meetRoomId
-            return res.json(await this.meetRoomService.joinMeetRoom(userId,meetRoomId))
+            const result=await this.meetRoomService.joinMeetRoom(userId,meetRoomId)
+            return res.json(result)
         }catch(err){
             next(err)
         }

@@ -45,6 +45,9 @@ export default class meetRoomService {
       throw new MyError(ErrorEnum.UserInRoom);
     }
     const meetRoom = await this.meetRoomDao.getMeetRoomById(meetRoomId);
+    if (!meetRoom) {
+      throw new MyError(ErrorEnum.RoomNotExist);
+    }
     return Result.succuss({
       isPassword: meetRoom.isPassword,
       inviteOnly: meetRoom.inviteOnly,

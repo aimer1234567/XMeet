@@ -23,12 +23,8 @@ export default class MeetRoomDao {
       meetRoom=await this.meetRoomRepository.findOneBy({id:id})
     }catch(err){
       if(err instanceof QueryFailedError){
-          console.log(err.driverError)
-          throw new MyError(err.message)
+          throw new Error(err.message)
       }
-    }
-    if(!meetRoom){
-      throw new MyError(`MeetRoom with id ${id} not found`)
     }
     return meetRoom
   }

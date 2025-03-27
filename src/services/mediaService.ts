@@ -56,7 +56,7 @@ class MediaService {
       return Result.error(ErrorEnum.UserInRoom);
     }
     this.roomList.get(roomId)!.addPeer(new Peer(userId));
-    this.userStatusManager.setUserRoomId(userId, roomId); //TODO: 优化，防止多次加入,记得退房时去除
+    this.userStatusManager.setUserRoomId(userId, roomId); 
     return Result.succuss();
   }
   /**
@@ -196,9 +196,9 @@ class MediaService {
       webSocketServer.OnDisconnect((userId) => {
         try{
           let roomId = this.userStatusManager.getUserRoomId(userId);
-          this.roomList.get(roomId)?.deletePeer(userId);
-        }catch(e){
-          console.log(e);
+          this.roomList.get(roomId)!.deletePeer(userId);
+        }catch(err){
+          return;
         }
       });
 
