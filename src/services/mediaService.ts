@@ -12,11 +12,13 @@ import {
 } from "../models/req/mediaReq";
 import MyError from "../common/myError";
 import { webSocketServer } from "../webSocket/webSocketServer";
-import { speechRecognitionUtil } from "../common/utils/speechRecognitionUtil";
+import { speechRecognitionUtil } from "../utils/speechRecognitionUtil";
+import userStatusManager from "./userStatusManager";
 class MediaService {
+  userStatusManager=userStatusManager;
   roomList: Map<string, Room> = new Map(); //房间列表
   workers: Array<types.Worker<types.AppData>> = []; //mediasoup工作线程
-  userIdToRoomId: Map<string, string> = new Map();
+  // userIdToRoomId: Map<string, string> = new Map();
   speechRecognition = speechRecognitionUtil;
   nextMediasoupWorkerIdx = 0; //mediasoup工作线程索引
   constructor() {}
@@ -30,6 +32,9 @@ class MediaService {
     if (this.roomList.has(roomId)) {
       return Result.succuss({ isRoom: false, roomId: roomId }); // TODO: 用于测试
     } else {
+      if(this.userStatusManager.userHasRoom(userId)){
+        return Result.succuss({ isRoom: false, roomId: roomId });
+      }
       console.log("create room", roomId);
       let worker = this.getMediasoupWorker();
       this.roomList.set(roomId, new Room(roomId, worker, userId));
@@ -47,11 +52,11 @@ class MediaService {
     if (!this.roomList.has(roomId)) {
       return Result.error(ErrorEnum.RoomNotExist);
     }
-    if (this.userIdToRoomId.has(userId)){
+    if (this.userStatusManager.userHasRoom(userId)) {
       return Result.error(ErrorEnum.UserInRoom);
     }
     this.roomList.get(roomId)!.addPeer(new Peer(userId));
-    this.userIdToRoomId.set(userId, roomId); //TODO: 优化，防止多次加入,记得退房时去除
+    this.userStatusManager.setUserRoomId(userId, roomId); //TODO: 优化，防止多次加入,记得退房时去除
     return Result.succuss();
   }
   /**
@@ -61,10 +66,7 @@ class MediaService {
    */
   getRouterRtpCapabilities(userId: string) {
     try {
-      let roomId = this.userIdToRoomId.get(userId);
-      if (roomId === undefined) {
-        throw new MyError(ErrorEnum.RoomNotExist);
-      }
+      let roomId = this.userStatusManager.getUserRoomId(userId);
       console.log("Get RouterRtpCapabilities:", { userId });
       return Result.succuss(this.roomList.get(roomId)!.getRtpCapabilities());
     } catch (e) {
@@ -81,7 +83,7 @@ class MediaService {
   async createWebRtcTransport(userId: string) {
     console.log("createWebRtcTransport:", { userId });
     try {
-      let roomId = this.userIdToRoomId.get(userId);
+      let roomId =  this.userStatusManager.getUserRoomId(userId);
       if (roomId === undefined) {
         throw new MyError(ErrorEnum.RoomNotExist);
       }
@@ -102,10 +104,7 @@ class MediaService {
   ) {
     console.log("Connect transport", { userId });
     try {
-      let roomId = this.userIdToRoomId.get(userId);
-      if (roomId === undefined) {
-        throw new MyError(ErrorEnum.RoomNotExist);
-      }
+      let roomId = this.userStatusManager.getUserRoomId(userId);
       await this.roomList
         .get(roomId)!
         .connectPeerTransport(
@@ -122,10 +121,7 @@ class MediaService {
   }
 
   async produce(produceReq: ProduceReq, userId: string) {
-    let roomId = this.userIdToRoomId.get(userId);
-    if (!roomId) {
-      return Result.error(ErrorEnum.RoomNotExist);
-    }
+    let roomId = this.userStatusManager.getUserRoomId(userId);
     let producerId = await this.roomList
       .get(roomId)!
       .produce(
@@ -157,10 +153,7 @@ class MediaService {
    * @returns
    */
   getProducers(userId: string) {
-    let roomId = this.userIdToRoomId.get(userId);
-    if (!roomId) {
-      return Result.error(ErrorEnum.RoomNotExist);
-    }
+    let roomId = this.userStatusManager.getUserRoomId(userId);
     let producerList = this.roomList
       .get(roomId)!
       .getProducerListForPeer(userId);
@@ -201,11 +194,12 @@ class MediaService {
       this.workers.push(worker);
 
       webSocketServer.OnDisconnect((userId) => {
-        let roomId = this.userIdToRoomId.get(userId);
-        if (!roomId) {
-          return;
+        try{
+          let roomId = this.userStatusManager.getUserRoomId(userId);
+          this.roomList.get(roomId)?.deletePeer(userId);
+        }catch(e){
+          console.log(e);
         }
-        this.roomList.get(roomId)?.deletePeer(userId);
       });
 
       // log worker resource usage
@@ -218,10 +212,7 @@ class MediaService {
   }
 
   async consume(ConsumeReq: ConsumeReq, userId: string) {
-    let roomId = this.userIdToRoomId.get(userId);
-    if (!roomId) {
-      return Result.error(ErrorEnum.RoomNotExist);
-    }
+    let roomId = this.userStatusManager.getUserRoomId(userId);
     let params = await this.roomList
       .get(roomId)!
       .consume(
@@ -233,20 +224,14 @@ class MediaService {
     return Result.succuss(params);
   }
   closeProducer(userId: string, producerId: string) {
-    let roomId = this.userIdToRoomId.get(userId);
-    if (!roomId) {
-      return Result.error(ErrorEnum.RoomNotExist);
-    }
+    let roomId = this.userStatusManager.getUserRoomId(userId);
     this.speechRecognition.closeRecognizer(userId);
     this.roomList.get(roomId)!.closeProducer(userId, producerId);
     return Result.succuss();
   }
 
   getStatus(userId: string) {
-    let roomId = this.userIdToRoomId.get(userId);
-    if (!roomId) {
-      return Result.error(ErrorEnum.RoomNotExist);
-    }
+    let roomId = this.userStatusManager.getUserRoomId(userId);
     let transportIds = this.roomList
       .get(roomId)!
       .peers.get(userId)!
@@ -264,20 +249,14 @@ class MediaService {
   }
 
   peerExec(userId: string) {
-    let roomId = this.userIdToRoomId.get(userId);
-    if (!roomId) {
-      return Result.error(ErrorEnum.RoomNotExist);
-    }
+    let roomId = this.userStatusManager.getUserRoomId(userId);
     this.roomList.get(roomId)!.deletePeer(userId);
-    this.userIdToRoomId.delete(userId);
+    this.userStatusManager.deleteUserRoomId(userId);
     return Result.succuss();
   }
 
   async getRouterStatus(userId: string) {
-    let roomId = this.userIdToRoomId.get(userId);
-    if (!roomId) {
-      return Result.error(ErrorEnum.RoomNotExist);
-    }
+    let roomId = this.userStatusManager.getUserRoomId(userId);
     let params = await this.roomList.get(roomId)!.router.dump();
     console.log({ roomId, params });
     return Result.succuss(params);

@@ -1,7 +1,7 @@
 import vosk from "vosk";
-import config from "../config/config";
+import config from "../common/config/config";
 import { PassThrough, Readable, ReadableOptions } from "stream";
-import { webSocketServer } from "../../webSocket/webSocketServer";
+import { webSocketServer } from "../webSocket/webSocketServer";
 import ffmpeg from "fluent-ffmpeg";
 import axios from "axios";
 class AudioStream extends Readable {

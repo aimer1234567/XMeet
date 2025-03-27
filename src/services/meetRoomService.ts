@@ -7,10 +7,16 @@ import {
 import MeetRoom from "../models/entity/meetRoom";
 import { plainToInstance } from "class-transformer";
 import Result from "../common/result";
+import userStatusManager from "./userStatusManager";
+import { ErrorEnum } from "../common/enums/errorEnum";
+import MyError from "../common/myError";
 export default class meetRoomService {
   meetRoomDao: MeetRoomDao = new MeetRoomDao();
   userDao: UserDao = new UserDao();
   async createMeetRoomInstant(userId: string, data: CreateMeetRoomReqInstant) {
+    if(userStatusManager.userHasRoom(userId)){
+      throw new MyError(ErrorEnum.UserInRoom);
+    }
     const meetRoom = plainToInstance(MeetRoom, {});
     meetRoom.creatorId = userId;
     meetRoom.startTime = new Date();
@@ -35,6 +41,9 @@ export default class meetRoomService {
   }
 
   async joinMeetRoom(userId: string, meetRoomId: string) {
+    if(userStatusManager.userHasRoom(userId)){
+      throw new MyError(ErrorEnum.UserInRoom);
+    }
     const meetRoom = await this.meetRoomDao.getMeetRoomById(meetRoomId);
     return Result.succuss({
       isPassword: meetRoom.isPassword,

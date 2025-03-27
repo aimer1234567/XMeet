@@ -16,8 +16,8 @@ import cors from "cors";
 import fs from "fs";
 import config from "./common/config/config";
 import { webSocketServer } from "./webSocket/webSocketServer";
-import { speechRecognitionUtil } from "./common/utils/speechRecognitionUtil";
-import initTranslationProcess from "./common/utils/initTranslationProcess";
+import { speechRecognitionUtil } from "./utils/speechRecognitionUtil";
+import initTranslationProcess from "./utils/initTranslationProcess";
 
 async function initApp() {
   //initTranslationProcess(); //初始化语音识别进程
@@ -51,9 +51,11 @@ async function initApp() {
   app.use(verifyHandler);
   app.use("/media", mediaRouter);
   app.use("/user", userRouter);
-  import("./routes/meetRoomRouter").then((meetRoomRouter) => {
+  await import("./routes/meetRoomRouter").then((meetRoomRouter) => {
     app.use("/meetRoom", meetRoomRouter.default);
+    console.log("meetRoomRouter loaded");
   });
+  console.log("errorHandler loaded");
   app.use(errorHandler);
   let server;
   if (config.webServer.isHttps) {

@@ -1,9 +1,15 @@
 // middlewares/errorHandler.js
 import { NextFunction, Request, Response } from 'express';
 import Result from '../common/result';
-export default function errorHandler(err:Error, req:Request, res:Response, next:NextFunction) {
-    return res.json(Result.error(err.message))
+import MyError from '../common/myError';
+export default function errorHandler(err:MyError | Error, req:Request, res:Response, next:NextFunction) {
+  if(err instanceof MyError){
+    return res.status(400).json(Result.error(err.message))
   }
+  if(err instanceof Error){
+    return res.status(500).json(Result.error(err.message))
+  }
+}
   
 
   

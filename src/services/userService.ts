@@ -1,10 +1,10 @@
 import NodeCache from "node-cache";
-import MailUtils from "../common/utils/mailUtils";
+import MailUtils from "../utils/mailUtils";
 import Result from "../common/result";
-import generateCaptcha from "../common/utils/generateCaptcha";
+import generateCaptcha from "../utils/generateCaptcha";
 import AppDataSource from "../common/config/database";
 import User from "../models/entity/user";
-import {LoginReq,UserRegisterReq} from "../models/req/userReq";
+import { LoginReq, UserRegisterReq } from "../models/req/userReq";
 import UserDao from "../dao/userDao";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import jwt from "jsonwebtoken";
@@ -34,8 +34,8 @@ export default class UserService {
       let user = new User(
         userRegisterReq.email,
         userRegisterReq.password,
-        userRegisterReq.userName
-        ,userRegisterReq.name
+        userRegisterReq.userName,
+        userRegisterReq.name
       );
       await AppDataSource.manager.save(user);
       return Result.succuss();
@@ -48,9 +48,12 @@ export default class UserService {
       throw new Error(ErrorEnum.UserIsNone);
     } else if (user.password !== loginReq.password) {
       throw new Error(ErrorEnum.PasswordError);
-    }else{
-      let token=jwt.sign({userId:user.id},config.jwt,{expiresIn:'30D',algorithm:"HS256"} as jwt.SignOptions)
-      return token
+    } else {
+      let token = jwt.sign({ userId: user.id }, config.jwt, {
+        expiresIn: "30D",
+        algorithm: "HS256",
+      } as jwt.SignOptions);
+      return token;
     }
   }
 }

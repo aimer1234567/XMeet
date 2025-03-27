@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import config from "../config/config";
+import config from "../common/config/config";
 const mailUtilsParameter = config.mailUtils;
 export default class MailUtils {
   private mailTransporter: nodemailer.Transporter;

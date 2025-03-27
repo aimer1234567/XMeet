@@ -5,12 +5,12 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../common/config/config";
 import MyError from "../common/myError";
 import { ErrorEnum } from "../common/enums/errorEnum";
-import { speechRecognitionUtil } from "../common/utils/speechRecognitionUtil";
-
+import { speechRecognitionUtil } from "../utils/speechRecognitionUtil";
+import userStatusManager from "../services/userStatusManager";
 type MESSAGE_EVENT = "speech";
 export class WebSocketServer {
-  io?: SocketIOServer;
-  wsMap: Map<string, Socket> = new Map(); // 存储用户ID对应的socket实例
+  private io?: SocketIOServer;
+  userStatusManager=userStatusManager
   isInit: boolean = false;
   private disconnectFunction: Array<(userId: string) => void> = new Array();
   private messageFunction: Map<string, (ws: Socket) => void> = new Map();
@@ -33,7 +33,7 @@ export class WebSocketServer {
         }) as JwtPayload;
         if (decoded && decoded.userId) {
           socket.data.userId = decoded.userId; // 存储用户ID
-          this.wsMap.set(decoded.userId, socket); // 记录用户的 socket
+          this.userStatusManager.addUser(decoded.userId,socket)
           return next();
         }
       } catch (err) {
@@ -48,7 +48,7 @@ export class WebSocketServer {
         this.disconnectFunction.forEach((func) => {
           func(socket.data.userId);
         });
-        this.wsMap.delete(socket.data.userId);
+        this.userStatusManager.deleteUser(socket.data.userId);
       });
 
       socket.on("speech", (speech) => {
@@ -60,7 +60,7 @@ export class WebSocketServer {
   send(userId: string, api: string, data: any) {
     if (!this.isInit) throw new MyError(ErrorEnum.WebSocketServerNotInit);
 
-    const socket = this.wsMap.get(userId);
+    const socket = this.userStatusManager.getUserWebSocket(userId);
     if (!socket) {
       throw new MyError(ErrorEnum.UserIsNone);
     }
