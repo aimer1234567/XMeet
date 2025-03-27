@@ -93,7 +93,7 @@ class MediaService {
       return Result.succuss(params);
     } catch (err) {
       if (err instanceof MyError) {
-        throw new MyError(err.msg);
+        throw new MyError(err.message);
       }
     }
   }
@@ -115,7 +115,7 @@ class MediaService {
       return Result.succuss();
     } catch (e) {
       if (e instanceof MyError) {
-        throw new MyError(e.msg);
+        throw new MyError(e.message);
       }
     }
   }
