@@ -88,6 +88,11 @@ export default class MediaController {
         const userId=req.headers['userId'] as string
         return res.json(this.mediaService.getStatus(userId))
     }
+
+    peerExec(req: Request, res: Response){
+        const userId=req.headers['userId'] as string
+        return res.json(this.mediaService.peerExec(userId))
+    }
     async getRouterStatus(req: Request, res: Response, next: NextFunction) {
         const userId=req.headers['userId'] as string
         try{

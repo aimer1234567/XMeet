@@ -11,7 +11,7 @@ router.post('/produce',(req,res,next)=>mediaController.produce(req,res,next))
 router.post('/getProducers',(req,res)=>mediaController.getProducers(req,res))
 router.post('/consume',(req,res,next)=>mediaController.consume(req,res,next))
 router.post('/closeProducer',(req,res)=>mediaController.closeProducer(req,res))
-
+router.get('/peerExec',(req,res)=>mediaController.peerExec(req,res))
 router.get('/getStatus',(req,res)=>mediaController.getStatus(req,res))
 router.get('/getRouterStatus',(req,res,next)=>mediaController.getRouterStatus(req,res,next))
 export default router;

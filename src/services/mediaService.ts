@@ -1,20 +1,25 @@
 import Result from "../common/result";
 import config from "../common/config/config";
-import {createWorker} from "mediasoup";
+import { createWorker } from "mediasoup";
 import { types } from "mediasoup";
 import Room from "../models/media/room";
 import Peer from "../models/media/peer";
 import { ErrorEnum } from "../common/enums/errorEnum";
-import { ConsumeReq, ConnectTransportReq,ProduceReq } from "../models/req/mediaReq";
+import {
+  ConsumeReq,
+  ConnectTransportReq,
+  ProduceReq,
+} from "../models/req/mediaReq";
 import MyError from "../common/myError";
-import {webSocketServer} from "../webSocket/webSocketServer";
+import { webSocketServer } from "../webSocket/webSocketServer";
+import { speechRecognitionUtil } from "../common/utils/speechRecognitionUtil";
 class MediaService {
   roomList: Map<string, Room> = new Map(); //房间列表
   workers: Array<types.Worker<types.AppData>> = []; //mediasoup工作线程
   userIdToRoomId: Map<string, string> = new Map();
+  speechRecognition = speechRecognitionUtil;
   nextMediasoupWorkerIdx = 0; //mediasoup工作线程索引
-  constructor() {
-  }
+  constructor() {}
   /**
    * 创建会议室
    * @param roomId
@@ -23,7 +28,7 @@ class MediaService {
 
   createRoom(roomId: string, userId: string) {
     if (this.roomList.has(roomId)) {
-      return Result.succuss({ isRoom: false, roomId: roomId })// TODO: 用于测试
+      return Result.succuss({ isRoom: false, roomId: roomId }); // TODO: 用于测试
     } else {
       console.log("create room", roomId);
       let worker = this.getMediasoupWorker();
@@ -41,6 +46,9 @@ class MediaService {
     console.log("join room", { roomId, userId });
     if (!this.roomList.has(roomId)) {
       return Result.error(ErrorEnum.RoomNotExist);
+    }
+    if (this.userIdToRoomId.has(userId)){
+      return Result.error(ErrorEnum.UserInRoom);
     }
     this.roomList.get(roomId)!.addPeer(new Peer(userId));
     this.userIdToRoomId.set(userId, roomId); //TODO: 优化，防止多次加入,记得退房时去除
@@ -113,25 +121,35 @@ class MediaService {
     }
   }
 
-  async produce(produceReq: ProduceReq,userId:string){
+  async produce(produceReq: ProduceReq, userId: string) {
     let roomId = this.userIdToRoomId.get(userId);
     if (!roomId) {
       return Result.error(ErrorEnum.RoomNotExist);
     }
-    let producerId =await this.roomList.get(roomId)!.produce(userId,produceReq.producerTransportId,produceReq.rtpParameters,produceReq.kind);
-    this.roomList.get(roomId)!.peers.forEach((peer)=>{
-      if(peer.peerId===userId){
-        return
+    let producerId = await this.roomList
+      .get(roomId)!
+      .produce(
+        userId,
+        produceReq.producerTransportId,
+        produceReq.rtpParameters,
+        produceReq.kind
+      );
+    if (produceReq.kind === "audio") {
+      this.speechRecognition.initRecognizer(userId);
+    }
+    this.roomList.get(roomId)!.peers.forEach((peer) => {
+      if (peer.peerId === userId) {
+        return;
       }
-      webSocketServer.send(peer.peerId,'newProducers',{producerId})
-    })
-    console.log('produce',{
-      type:produceReq.kind,
+      webSocketServer.send(peer.peerId, "newProducers", { producerId });
+    });
+    console.log("produce", {
+      type: produceReq.kind,
       userId,
-      id:producerId
-    })
-    console.log("生产者id",{userId,producerId})
-    return Result.succuss(producerId)
+      id: producerId,
+    });
+    console.log("生产者id", { userId, producerId });
+    return Result.succuss(producerId);
   }
   /**
    * 客户端获取本房间所有人的生产通道
@@ -143,7 +161,9 @@ class MediaService {
     if (!roomId) {
       return Result.error(ErrorEnum.RoomNotExist);
     }
-    let producerList = this.roomList.get(roomId)!.getProducerListForPeer(userId);
+    let producerList = this.roomList
+      .get(roomId)!
+      .getProducerListForPeer(userId);
     console.log("getProducers:", { userId, roomId, producerList });
     return Result.succuss(producerList);
   }
@@ -179,13 +199,14 @@ class MediaService {
         setTimeout(() => process.exit(1), 2000);
       });
       this.workers.push(worker);
-    webSocketServer.OnDisconnect((userId) => {
-    let roomId = this.userIdToRoomId.get(userId);
-    if(!roomId){
-      return;
-    }
-    this.roomList.get(roomId)?.deletePeer(userId)
-})
+
+      webSocketServer.OnDisconnect((userId) => {
+        let roomId = this.userIdToRoomId.get(userId);
+        if (!roomId) {
+          return;
+        }
+        this.roomList.get(roomId)?.deletePeer(userId);
+      });
 
       // log worker resource usage
       /*setInterval(async () => {
@@ -195,47 +216,74 @@ class MediaService {
               }, 120000);*/
     }
   }
-  
-  async consume(ConsumeReq:ConsumeReq,userId:string){
-    let roomId=this.userIdToRoomId.get(userId);
-    if (!roomId){
+
+  async consume(ConsumeReq: ConsumeReq, userId: string) {
+    let roomId = this.userIdToRoomId.get(userId);
+    if (!roomId) {
       return Result.error(ErrorEnum.RoomNotExist);
     }
-    let params = await this.roomList.get(roomId)!.consume(userId,ConsumeReq.consumerTransportId,ConsumeReq.producerId,ConsumeReq.rtpCapabilities);
+    let params = await this.roomList
+      .get(roomId)!
+      .consume(
+        userId,
+        ConsumeReq.consumerTransportId,
+        ConsumeReq.producerId,
+        ConsumeReq.rtpCapabilities
+      );
     return Result.succuss(params);
   }
-  closeProducer(userId:string,producerId:string){
-    let roomId=this.userIdToRoomId.get(userId);
-    if (!roomId){
+  closeProducer(userId: string, producerId: string) {
+    let roomId = this.userIdToRoomId.get(userId);
+    if (!roomId) {
       return Result.error(ErrorEnum.RoomNotExist);
     }
-    this.roomList.get(roomId)!.closeProducer(userId,producerId)
+    this.speechRecognition.closeRecognizer(userId);
+    this.roomList.get(roomId)!.closeProducer(userId, producerId);
     return Result.succuss();
   }
 
-  getStatus(userId:string){
-    let roomId=this.userIdToRoomId.get(userId);
-    if (!roomId){
+  getStatus(userId: string) {
+    let roomId = this.userIdToRoomId.get(userId);
+    if (!roomId) {
       return Result.error(ErrorEnum.RoomNotExist);
     }
-    let transportIds=this.roomList.get(roomId)!.peers.get(userId)!.transports.keys()
-    let producerIds=this.roomList.get(roomId)!.peers.get(userId)!.producers.keys()
-    let consumerIds=this.roomList.get(roomId)!.peers.get(userId)!.consumers.keys()
-    console.log({ userId,transportIds,producerIds,consumerIds })
+    let transportIds = this.roomList
+      .get(roomId)!
+      .peers.get(userId)!
+      .transports.keys();
+    let producerIds = this.roomList
+      .get(roomId)!
+      .peers.get(userId)!
+      .producers.keys();
+    let consumerIds = this.roomList
+      .get(roomId)!
+      .peers.get(userId)!
+      .consumers.keys();
+    console.log({ userId, transportIds, producerIds, consumerIds });
     return Result.succuss();
   }
 
-  async getRouterStatus(userId:string){
-    let roomId=this.userIdToRoomId.get(userId);
-    if (!roomId){
+  peerExec(userId: string) {
+    let roomId = this.userIdToRoomId.get(userId);
+    if (!roomId) {
       return Result.error(ErrorEnum.RoomNotExist);
     }
-    let params=await this.roomList.get(roomId)!.router.dump()
-    console.log({roomId,params})
+    this.roomList.get(roomId)!.deletePeer(userId);
+    this.userIdToRoomId.delete(userId);
+    return Result.succuss();
+  }
+
+  async getRouterStatus(userId: string) {
+    let roomId = this.userIdToRoomId.get(userId);
+    if (!roomId) {
+      return Result.error(ErrorEnum.RoomNotExist);
+    }
+    let params = await this.roomList.get(roomId)!.router.dump();
+    console.log({ roomId, params });
     return Result.succuss(params);
   }
 }
 
-const mediaService=new MediaService()
-export {MediaService};
-export {mediaService};
+const mediaService = new MediaService();
+export { MediaService };
+export { mediaService };

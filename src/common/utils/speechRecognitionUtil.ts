@@ -3,8 +3,9 @@ import config from "../config/config";
 import { PassThrough, Readable, ReadableOptions } from "stream";
 import { webSocketServer } from "../../webSocket/webSocketServer";
 import ffmpeg from "fluent-ffmpeg";
+import axios from "axios";
 class AudioStream extends Readable {
-  chunks: Array<any>;
+  chunks: Buffer[];
   reading: boolean;
   constructor(options: ReadableOptions, chunks: Array<any>) {
     super(options);
@@ -37,7 +38,7 @@ class AudioStream extends Readable {
 }
 class UserSpeechSpace {
   constructor(
-    public audioChunks: Array<any>,
+    public audioChunks: Buffer[],
     public audioStream: AudioStream,
     public pcmStream: PassThrough,
     public speechRecognition: vosk.Recognizer<any>
@@ -46,23 +47,26 @@ class UserSpeechSpace {
 export class SpeechRecognition {
   model!: vosk.Model;
   userSpeechSpaceMap: Map<string, UserSpeechSpace> = new Map();
-  init() {
+  initTranslationService() {
     this.model = new vosk.Model(config.speechRecognition.modelPath);
-    console.log("SpeechRecognition init");
+    console.log("语音识别模型加载成功");
   }
-  init1(userId: string) {
+  initRecognizer(userId: string) {
+    if (this.userSpeechSpaceMap.has(userId)) {
+      return;
+    }
     const speechRecognition = new vosk.Recognizer({
       model: this.model,
       sampleRate: config.speechRecognition.sampleRate,
     });
-    const audioChunks = Array<any>();
+    const audioChunks = Array<Buffer>();
     const audioStream = new AudioStream({}, audioChunks);
     const pcmStream = new PassThrough();
     this.userSpeechSpaceMap.set(userId, {
       audioChunks,
       audioStream,
       pcmStream,
-      speechRecognition
+      speechRecognition,
     });
     ffmpeg()
       .input(audioStream)
@@ -78,24 +82,51 @@ export class SpeechRecognition {
         console.error("处理音频时出错:", err);
       })
       .pipe(pcmStream, { end: false }); // 将转换后的音频流传输到 pcmStream
-
+    //创建一个单独的工作线程
     pcmStream.on("data", async (chunk) => {
+      if (chunk.length === 0) return;
       let translatedText;
       let recognitionText;
       const speech = speechRecognition.acceptWaveform(chunk);
       if (speech) {
-        console.log("接收到音频数据：");
-        let maxConfidence = 0;
         let speechToText = speechRecognition.result();
-        console.log(speechToText);
+        console.log("接收到音频数据：", speechToText.text);
+        if (!speechToText.text || speechToText.text.trim() === "") {
+          return;
+        }
+        try {
+          let translateText = await axios.post(
+            "http://127.0.0.1:8001/translate",
+            {
+              text: speechToText.text,
+              lang: "zh",
+            }
+          );
+          console.log("翻译结果：", translateText.data.translateResult);
+          webSocketServer.send(userId, "translateText", {
+            translateText: translateText.data.translateResult,
+          });
+        } catch (error) {
+          console.log("翻译失败：", error);
+        }
       }
     });
-    console.log("开始识别")
+    console.log("开始语音识别");
   }
-  rec(userId:string,buffer: Buffer) {
+  rec(userId: string, buffer: Buffer) {
+    console.log("输入长度", buffer.length);
+    if (!this.userSpeechSpaceMap.get(userId)) {
+      return;
+    }
     this.userSpeechSpaceMap.get(userId)!.audioChunks.push(buffer);
     this.userSpeechSpaceMap.get(userId)!.audioStream.triggerRead();
   }
+  closeRecognizer(userId: string) {
+    let userSpeechSpace = this.userSpeechSpaceMap.get(userId);
+    userSpeechSpace?.speechRecognition.free();
+    this.userSpeechSpaceMap.delete(userId);
+    console.log("关闭语音识别");
+  }
 }
-const speechRecognition = new SpeechRecognition();
-export { speechRecognition };
+const speechRecognitionUtil = new SpeechRecognition();
+export { speechRecognitionUtil };

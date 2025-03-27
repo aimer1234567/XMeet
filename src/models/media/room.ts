@@ -142,6 +142,7 @@ export default class Room {
   }
 
   closeProducer(userId:string,producerId:string){
+    
     this.peers.get(userId)!.closeProducer(producerId);
   }
 }

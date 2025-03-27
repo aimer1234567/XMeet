@@ -3,6 +3,7 @@ import { todo } from "node:test";
 import { webSocketServer } from "../../webSocket/webSocketServer";
 export default class Peer {
   producers = new Map<string, types.Producer>();
+  producerLabel =new Map<types.MediaKind,string>();
   consumers = new Map<string, types.Consumer>();
   transports = new Map<string, types.Transport>();
   constructor(public peerId: string) {}
@@ -36,13 +37,15 @@ export default class Peer {
       });
       console.error("生产者id",producer.id)
     this.producers.set(producer.id, producer);
+    this.producerLabel.set(kind,producer.id)
     producer.on("transportclose", () => {
-      console.log("Producer transport close", {
+      console.log("生产者通道关闭", {
         name: `${this.peerId}`,
         consumer_id: `${producer.id}`,
       });
       producer.close();
       this.producers.delete(producer.id);
+      this.producerLabel.delete(kind)
     });
     return producer;
   }
@@ -95,10 +98,10 @@ export default class Peer {
   closeProducer(producerId:string){
     try{
       this.producers.get(producerId)!.close();
+      this.producers.delete(producerId);
     }catch(e){
       console.error(e)
     }
-    this.producers.delete(producerId);
   }
 
   close(){

@@ -1,7 +1,7 @@
 import express from "express";
 import "reflect-metadata";
 import userRouter from "./routes/userRouter";
-import expressOasGenerator from "express-oas-generator";
+import expressOasGenerator, { init } from "express-oas-generator";
 import swaggerUi from "swagger-ui-express";
 import AppDataSource from "./common/config/database";
 import errorHandler from "./middlewares/errorHandler";
@@ -15,17 +15,20 @@ import verifyHandler from "./middlewares/verifyHandler";
 import cors from "cors";
 import fs from "fs";
 import config from "./common/config/config";
-import {webSocketServer} from "./webSocket/webSocketServer";
-import { speechRecognition } from "./common/utils/speechRecognition";
-async function init() {
-  speechRecognition.init()
-  await AppDataSource.initialize()
-  .then(() => {
-    console.log("数据库初始化");
-  })
-  .catch((err) => {
-    console.error("Error during Data Source initialization", err);
-  });
+import { webSocketServer } from "./webSocket/webSocketServer";
+import { speechRecognitionUtil } from "./common/utils/speechRecognitionUtil";
+import initTranslationProcess from "./common/utils/initTranslationProcess";
+
+async function initApp() {
+  //initTranslationProcess(); //初始化语音识别进程
+  speechRecognitionUtil.initTranslationService(); //初始化语音识别，加载语音识别模型
+  await AppDataSource.initialize() //初始化数据库
+    .then(() => {
+      console.log("数据库初始化成功");
+    })
+    .catch((err) => {
+      console.error("数据库初始化失败", err);
+    });
   await mediaService.init(); //初始化mediasoup工作线程
   const options = {
     key: fs.readFileSync(config.webServer.https.key, "utf-8"),
@@ -48,18 +51,17 @@ async function init() {
   app.use(verifyHandler);
   app.use("/media", mediaRouter);
   app.use("/user", userRouter);
-  import("./routes/meetRoomRouter").then((meetRoomRouter)=>{
-    app.use("/meetRoom",meetRoomRouter.default)
-  })
+  import("./routes/meetRoomRouter").then((meetRoomRouter) => {
+    app.use("/meetRoom", meetRoomRouter.default);
+  });
   app.use(errorHandler);
   let server;
-  let wss
   if (config.webServer.isHttps) {
     server = https.createServer(options, app);
-    webSocketServer.init(server)
+    webSocketServer.init(server);
   } else {
     server = http.createServer(app);
-    webSocketServer.init(server)
+    webSocketServer.init(server);
   }
   server.listen(config.webServer.port, config.webServer.host, () => {
     console.log(
@@ -72,4 +74,4 @@ async function init() {
   });
 }
 
-init();
+initApp();
