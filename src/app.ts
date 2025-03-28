@@ -18,8 +18,12 @@ import config from "./common/config/config";
 import { webSocketServer } from "./webSocket/webSocketServer";
 import { speechRecognitionUtil } from "./utils/speechRecognitionUtil";
 import initTranslationProcess from "./utils/initTranslationProcess";
+import path from 'path'
 
 async function initApp() {
+  const voskLibPath = path.resolve(__dirname, "../../node_modules/vosk/lib/win-x86_64");
+  process.env.PATH += `;${voskLibPath}`;
+  console.log("Vosk DLL 路径:", voskLibPath);
   //initTranslationProcess(); //初始化语音识别进程
   speechRecognitionUtil.initTranslationService(); //初始化语音识别，加载语音识别模型
   await AppDataSource.initialize() //初始化数据库
