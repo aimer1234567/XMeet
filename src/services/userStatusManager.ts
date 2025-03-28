@@ -1,14 +1,17 @@
 import { Socket } from "socket.io";
 import MyError from "../common/myError";
 import { ErrorEnum } from "../common/enums/errorEnum";
+import { randomUUID } from 'crypto';
 class UserStatus {
+  public session:string
   public userId: string;
   public isRoomId: boolean = false;
   public roomId?: string;
   public webSocket: Socket;
-  public constructor(userId: string, webSocket: Socket) {
+  public constructor(userId: string, webSocket: Socket,session:string) {
     this.userId = userId;
     this.webSocket = webSocket;
+    this.session=session;
   }
   public setRoomId(roomId: string) {
     this.roomId = roomId;
@@ -24,7 +27,7 @@ class UserStatus {
 class UserStatusManager {
   private userStatusMap: Map<string, UserStatus> = new Map();
   public addUser(userId: string, webSocket: Socket) {
-    this.userStatusMap.set(userId, new UserStatus(userId, webSocket));
+    this.userStatusMap.set(userId, new UserStatus(userId, webSocket,randomUUID()));
   }
   public deleteUser(userId: string) {
     this.userStatusMap.delete(userId);
@@ -66,6 +69,10 @@ class UserStatusManager {
   public deleteUserRoomId(userId: string) {
     const userStatus = this.getUserStatus(userId);
     userStatus.isRoomId = false;
+  }
+  public getUserSession(userId: string) {
+    const userStatus = this.getUserStatus(userId);
+    return userStatus.session;
   }
 }
 export default new UserStatusManager();

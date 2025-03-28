@@ -33,7 +33,11 @@ export class WebSocketServer {
         }) as JwtPayload;
         if (decoded && decoded.userId) {
           socket.data.userId = decoded.userId; // 存储用户ID
+          if(this.userStatusManager.hasUser(decoded.userId)){ //当新用户登录的时候，移除当前登录的用户
+            this.send(socket.data.userId,'userIdExist',null)
+          }
           this.userStatusManager.addUser(decoded.userId,socket)
+          socket.data.sessionId=userStatusManager.getUserSession(decoded.userId)
           return next();
         }
       } catch (err) {
@@ -42,13 +46,16 @@ export class WebSocketServer {
     });
 
     this.io.on("connection", (socket) => {
+      this.send(socket.data.userId,'sessionId',this.userStatusManager.getUserSession(socket.data.userId))
       console.log(`${socket.data.userId} socket 连接成功`);
       socket.on("disconnect", () => {
         console.log(`${socket.data.userId} 断开连接`);
         this.disconnectFunction.forEach((func) => {
           func(socket.data.userId);
         });
-        this.userStatusManager.deleteUser(socket.data.userId);
+        if(socket.data.sessionId===this.userStatusManager.getUserSession(socket.data.userId)){
+          this.userStatusManager.deleteUser(socket.data.userId);
+        }
       });
 
       socket.on("speech", (speech) => {
@@ -59,7 +66,6 @@ export class WebSocketServer {
 
   send(userId: string, api: string, data: any) {
     if (!this.isInit) throw new MyError(ErrorEnum.WebSocketServerNotInit);
-
     const socket = this.userStatusManager.getUserWebSocket(userId);
     if (!socket) {
       throw new MyError(ErrorEnum.UserIsNone);

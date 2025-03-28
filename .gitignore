@@ -3,3 +3,4 @@ node_modules/
 package-lock.json
 speech_model
 py_script/venv/
+.VSCodeCounter/
