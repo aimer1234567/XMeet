@@ -106,7 +106,7 @@ export class SpeechRecognition {
     //创建一个单独的工作线程
     pcmStream.on("data", async (audioBuffer) => {
       if (audioBuffer.length === 0) return;
-      console.log("推送数据：");
+      console.log("推送数据：",audioBuffer);
       this.recWorker.postMessage({ userId, audioBuffer });
     });
     console.log("开始语音识别");
