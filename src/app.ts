@@ -21,9 +21,9 @@ import initTranslationProcess from "./utils/initTranslationProcess";
 import path from 'path'
 
 async function initApp() {
-  const voskLibPath = path.resolve(__dirname, "../../node_modules/vosk/lib/win-x86_64");
-  process.env.PATH += `;${voskLibPath}`;
-  console.log("Vosk DLL 路径:", voskLibPath);
+  // const voskLibPath = path.resolve(__dirname, "../../node_modules/vosk/lib/win-x86_64");
+  // process.env.PATH += `;${voskLibPath}`;   //因为要在work线程中使用vosk，但是work线程不能找到其dll，已经在系统中设置好了环境变量
+  // console.log("Vosk DLL 路径:", voskLibPath);
   //initTranslationProcess(); //初始化语音识别进程
   speechRecognitionUtil.initTranslationService(); //初始化语音识别，加载语音识别模型
   await AppDataSource.initialize() //初始化数据库

@@ -39,7 +39,8 @@ export default {
       }
     },
     speechRecognition:{
-      modelPath:"speech_model/cn_model/",
+      cn_modelPath:"speech_model/cn_model/",
+      en_modelPath:"speech_model/en_model/",
       sampleRate:16000
     },
     mediasoup: {

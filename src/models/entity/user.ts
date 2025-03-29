@@ -16,10 +16,14 @@ export default class User {
     @Column()
     name:string
 
-    constructor(email: string, password: string, userName: string,name:string) {
+    @Column()
+    lang:string
+
+    constructor(email: string, password: string, userName: string,name:string,lang:string) {
         this.email = email;
         this.password = password;
         this.userName = userName;
         this.name=name;
+        this.lang=lang;
       }
 }

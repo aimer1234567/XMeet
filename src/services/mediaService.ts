@@ -14,12 +14,14 @@ import MyError from "../common/myError";
 import { webSocketServer } from "../webSocket/webSocketServer";
 import { speechRecognitionUtil } from "../utils/speechRecognitionUtil";
 import userStatusManager from "./userStatusManager";
+import UserDao from "../dao/userDao";
 class MediaService {
   userStatusManager=userStatusManager;
   roomList: Map<string, Room> = new Map(); //房间列表
   workers: Array<types.Worker<types.AppData>> = []; //mediasoup工作线程
   // userIdToRoomId: Map<string, string> = new Map();
   speechRecognition = speechRecognitionUtil;
+  userDao=new UserDao();
   nextMediasoupWorkerIdx = 0; //mediasoup工作线程索引
   constructor() {}
   /**
@@ -131,7 +133,8 @@ class MediaService {
         produceReq.kind
       );
     if (produceReq.kind === "audio") {
-      this.speechRecognition.initRecognizer(userId);
+      let user=await this.userDao.selectById(userId)
+      this.speechRecognition.initRecognizer(userId,user.lang);
     }
     this.roomList.get(roomId)!.peers.forEach((peer) => {
       if (peer.peerId === userId) {

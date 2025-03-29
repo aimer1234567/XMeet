@@ -77,7 +77,7 @@ export class SpeechRecognition {
       }
     });
   }
-  initRecognizer(userId: string) {
+  initRecognizer(userId: string,lang:string) {
     if (this.userSpeechSpaceMap.has(userId)) {
       return;
     }
@@ -89,15 +89,20 @@ export class SpeechRecognition {
       audioStream,
       pcmStream,
     });
+    this.recWorker.postMessage({action: 'init', data:{userId,lang}})
     ffmpeg()
       .input(audioStream)
       .inputFormat("webm") // 如果 WebSocket 是传输 WebM 格式的音频
+      .audioFilters([
+        'highpass=f=200',  // 200Hz 高通滤波
+        'lowpass=f=3000',  // 3000Hz 低通滤波
+      ])
       .audioCodec("pcm_s16le") // 使用 16-bit PCM 编码
       .audioFrequency(config.speechRecognition.sampleRate) // 设置采样率
       .audioChannels(1) // 单声道音频
       .format("wav") // 输出为 wav 格式
       .on("end", () => {
-        console.log("音频处理完成");
+        console.log("ffmpeg音频处理完成");
       })
       .on("error", (err) => {
         console.error("处理音频时出错:", err);
@@ -106,8 +111,7 @@ export class SpeechRecognition {
     //创建一个单独的工作线程
     pcmStream.on("data", async (audioBuffer) => {
       if (audioBuffer.length === 0) return;
-      console.log("推送数据：",audioBuffer);
-      this.recWorker.postMessage({ userId, audioBuffer });
+      this.recWorker.postMessage({action:'newData',data:{userId, audioBuffer} });
     });
     console.log("开始语音识别");
   }
@@ -121,7 +125,12 @@ export class SpeechRecognition {
   }
   closeRecognizer(userId: string) {
     let userSpeechSpace = this.userSpeechSpaceMap.get(userId);
+    if (userSpeechSpace) {
+      userSpeechSpace.audioStream.endStream(); // 结束流
+      userSpeechSpace.pcmStream.end(); // 结束 PCM 流
+    }
     this.userSpeechSpaceMap.delete(userId);
+    this.recWorker.postMessage({action: 'close', data:{userId}})
     console.log("关闭语音识别");
   }
 }
