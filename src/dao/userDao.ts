@@ -1,7 +1,7 @@
 import AppDataSource from "../common/config/database";
 import MyError from "../common/myError";
 import User from "../models/entity/user";
-export default class UserDao {
+export class UserDao {
   private userRepository = AppDataSource.getRepository(User);
   async selectByUsername(username: string) {
     return await this.userRepository.findOneBy({ userName: username });
@@ -14,3 +14,5 @@ export default class UserDao {
     return user;
   }
 }
+const userDao = new UserDao();
+export { userDao };

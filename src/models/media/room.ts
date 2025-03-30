@@ -3,6 +3,7 @@ import Peer from "./peer";
 import config from "../../common/config/config";
 import { ErrorEnum } from "../../common/enums/errorEnum";
 import MyError from "../../common/myError";
+import userStatusManager from "../../services/userStatusManager";
 export default class Room {
   peers = new Map<string, Peer>();
   mediaCodecs!: types.RtpCodecCapability[];
@@ -21,8 +22,8 @@ export default class Room {
   addPeer(peer: Peer) {
     this.peers.set(peer.peerId, peer);
   }
-  getProducerListForPeer(userId: string) {
-    let producerList = new Array<{producerId:string}>();
+  getProducerUserMapForPeer(userId: string) {
+    let producerUserMap = new Array<{producerId:string,user:{username:string,name:string}}>();
     //获取这个房间的所有用户
     this.peers.forEach((peer) => {
       //获取用户的所有生产者·
@@ -30,12 +31,12 @@ export default class Room {
         return
       }
       peer.producers.forEach((producer) => {
-        producerList.push({
-          producerId: producer.id,
-        });
+        const userName=userStatusManager.getUserName(peer.peerId)
+        const name=userStatusManager.getUserName(peer.peerId)
+        producerUserMap.push({producerId:producer.id,user:{username:userName,name:name}})
       });
     });
-    return producerList;
+    return producerUserMap;
   }
   
 

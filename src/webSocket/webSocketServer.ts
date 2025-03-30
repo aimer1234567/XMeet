@@ -7,9 +7,11 @@ import MyError from "../common/myError";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import { speechRecognitionUtil } from "../utils/speechRecognitionUtil";
 import userStatusManager from "../services/userStatusManager";
+import { userDao } from "../dao/userDao";
 type MESSAGE_EVENT = "speech";
 export class WebSocketServer {
   private io?: SocketIOServer;
+  userDao=userDao
   userStatusManager=userStatusManager
   isInit: boolean = false;
   private disconnectFunction: Array<(userId: string) => void> = new Array();
@@ -21,7 +23,7 @@ export class WebSocketServer {
     this.isInit = true;
 
     // 认证中间件
-    this.io.use((socket, next) => {
+    this.io.use(async (socket, next) => {
       const token = socket.handshake.auth?.token; // 通过 auth 获取 token
       if (!token) {
         return next(new MyError(ErrorEnum.VerifyError));
@@ -32,12 +34,13 @@ export class WebSocketServer {
           algorithms: ["HS256"],
         }) as JwtPayload;
         if (decoded && decoded.userId) {
-          socket.data.userId = decoded.userId; // 存储用户ID
-          if(this.userStatusManager.hasUser(decoded.userId)){ //当新用户登录的时候，移除当前登录的用户
+          const userId = decoded.userId;
+          socket.data.userId = userId; // 存储用户ID
+          if(this.userStatusManager.hasUser(userId)){ //当新用户登录的时候，移除当前登录的用户
             this.send(socket.data.userId,'userIdExist',null)
           }
-          this.userStatusManager.addUser(decoded.userId,socket)
-          socket.data.sessionId=userStatusManager.getUserSession(decoded.userId)
+          await this.userStatusManager.addUser(userId,socket)
+          socket.data.sessionId=userStatusManager.getUserSession(userId)
           return next();
         }
       } catch (err) {

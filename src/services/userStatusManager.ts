@@ -2,16 +2,21 @@ import { Socket } from "socket.io";
 import MyError from "../common/myError";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import { randomUUID } from 'crypto';
+import { userDao } from "../dao/userDao";
 class UserStatus {
-  public session:string
+  public session:string;
   public userId: string;
+  public userName: string;
+  public name: string;
   public isRoomId: boolean = false;
   public roomId?: string;
   public webSocket: Socket;
-  public constructor(userId: string, webSocket: Socket,session:string) {
+  public constructor(userId: string, webSocket: Socket,session:string,userName:string,name:string) {
     this.userId = userId;
     this.webSocket = webSocket;
     this.session=session;
+    this.userName=userName;
+    this.name=name;
   }
   public setRoomId(roomId: string) {
     this.roomId = roomId;
@@ -26,8 +31,9 @@ class UserStatus {
 }
 class UserStatusManager {
   private userStatusMap: Map<string, UserStatus> = new Map();
-  public addUser(userId: string, webSocket: Socket) {
-    this.userStatusMap.set(userId, new UserStatus(userId, webSocket,randomUUID()));
+  public async addUser(userId: string, webSocket: Socket) {
+    const user= await userDao.selectById(userId)
+    this.userStatusMap.set(userId, new UserStatus(userId, webSocket,randomUUID(),user.userName,user.name));
   }
   public deleteUser(userId: string) {
     this.userStatusMap.delete(userId);
@@ -73,6 +79,14 @@ class UserStatusManager {
   public getUserSession(userId: string) {
     const userStatus = this.getUserStatus(userId);
     return userStatus.session;
+  }
+  public getUserName(userId: string) {
+    const userStatus = this.getUserStatus(userId);
+    return userStatus.userName;
+  }
+  public getName(userId: string) {
+    const userStatus = this.getUserStatus(userId);
+    return userStatus.name;
   }
 }
 export default new UserStatusManager();

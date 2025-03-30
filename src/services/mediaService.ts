@@ -14,14 +14,15 @@ import MyError from "../common/myError";
 import { webSocketServer } from "../webSocket/webSocketServer";
 import { speechRecognitionUtil } from "../utils/speechRecognitionUtil";
 import userStatusManager from "./userStatusManager";
-import UserDao from "../dao/userDao";
+import {userDao} from "../dao/userDao";
+import { todo } from "node:test";
 class MediaService {
   userStatusManager=userStatusManager;
   roomList: Map<string, Room> = new Map(); //房间列表
   workers: Array<types.Worker<types.AppData>> = []; //mediasoup工作线程
   // userIdToRoomId: Map<string, string> = new Map();
   speechRecognition = speechRecognitionUtil;
-  userDao=new UserDao();
+  userDao=userDao;
   nextMediasoupWorkerIdx = 0; //mediasoup工作线程索引
   constructor() {}
   /**
@@ -136,11 +137,12 @@ class MediaService {
       let user=await this.userDao.selectById(userId)
       this.speechRecognition.initRecognizer(userId,user.lang);
     }
-    this.roomList.get(roomId)!.peers.forEach((peer) => {
+    this.roomList.get(roomId)!.peers.forEach(async (peer) => {
       if (peer.peerId === userId) {
         return;
       }
-      webSocketServer.send(peer.peerId, "newProducers", { producerId });
+      let user=await this.userDao.selectById(userId) // TODO: 前端接收后，存储每个视频连接的对应用户的姓名，username，
+      webSocketServer.send(peer.peerId, "newProducers", { producerId,user:{username:user.userName,name:user.name} });
     });
     console.log("produce", {
       type: produceReq.kind,
@@ -157,11 +159,11 @@ class MediaService {
    */
   getProducers(userId: string) {
     let roomId = this.userStatusManager.getUserRoomId(userId);
-    let producerList = this.roomList
+    let producerUserMap = this.roomList
       .get(roomId)!
-      .getProducerListForPeer(userId);
-    console.log("getProducers:", { userId, roomId, producerList });
-    return Result.succuss(producerList);
+      .getProducerUserMapForPeer(userId);
+    console.log("getProducers:", { userId, roomId, producerUserMap });
+    return Result.succuss(producerUserMap);
   }
   /**
    * @returns mediasoup工作线程

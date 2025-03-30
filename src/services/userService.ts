@@ -5,14 +5,14 @@ import generateCaptcha from "../utils/generateCaptcha";
 import AppDataSource from "../common/config/database";
 import User from "../models/entity/user";
 import { LoginReq, UserRegisterReq } from "../models/req/userReq";
-import UserDao from "../dao/userDao";
+import {userDao ,UserDao} from "../dao/userDao";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import jwt from "jsonwebtoken";
 import config from "../common/config/config";
 export default class UserService {
   cache = new NodeCache();
   mailUtils: MailUtils = new MailUtils();
-  userDao: UserDao = new UserDao();
+  userDao: UserDao = userDao;
   /// TODO: 优化，防止多次获取验证码
   async getMailCaptcha(mail: string) {
     let captcha = generateCaptcha();
@@ -35,7 +35,8 @@ export default class UserService {
         userRegisterReq.email,
         userRegisterReq.password,
         userRegisterReq.userName,
-        userRegisterReq.name
+        userRegisterReq.name,
+        userRegisterReq.lang
       );
       await AppDataSource.manager.save(user);
       return Result.succuss();

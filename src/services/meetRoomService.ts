@@ -1,5 +1,5 @@
 import MeetRoomDao from "../dao/meetRoomDao";
-import UserDao from "../dao/userDao";
+import {userDao,UserDao} from "../dao/userDao";
 import {
   CreateMeetRoomReq,
   CreateMeetRoomReqInstant,
@@ -12,7 +12,7 @@ import { ErrorEnum } from "../common/enums/errorEnum";
 import MyError from "../common/myError";
 export default class meetRoomService {
   meetRoomDao: MeetRoomDao = new MeetRoomDao();
-  userDao: UserDao = new UserDao();
+  userDao: UserDao = userDao;
   async createMeetRoomInstant(userId: string, data: CreateMeetRoomReqInstant) {
     if(userStatusManager.userHasRoom(userId)){
       throw new MyError(ErrorEnum.UserInRoom);

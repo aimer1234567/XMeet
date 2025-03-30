@@ -20,7 +20,8 @@ export default class UserController {
       req.body.captcha,
       req.body.userName,
       req.body.password,
-      req.body.name
+      req.body.name,
+      req.body.lang
     );
     res.json(this.userService.register(userRegisterReq));
   }

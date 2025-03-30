@@ -4,7 +4,8 @@ export class UserRegisterReq {
         public captcha:number,
         public userName:string,
         public password:string,
-        public name:string
+        public name:string,
+        public lang:string
     ){}
 }
 
