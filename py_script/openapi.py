@@ -20,8 +20,9 @@ class TranslationRequest(BaseModel):
     
 class Translate():
     def __init__(self,src_lang='zh',tgt_lang='en'):
-        # 定义模型名称
-        self.model_name=f'Helsinki-NLP/opus-mt-{src_lang}-{tgt_lang}'
+        # 定义模型名称，从本地路径中加载
+        #"Helsinki-NLP/opus-mt-zh-en"
+        self.model_name=f'model/Helsinki-NLP/opus-mt-{src_lang}-{tgt_lang}'
         # 加载预训练模型和tokenizer
         self.model = MarianMTModel.from_pretrained(self.model_name)
         self.tokenizer = MarianTokenizer.from_pretrained(self.model_name)
@@ -41,8 +42,8 @@ class Translate():
 translateZhEn:Translate=Translate(src_lang="zh",tgt_lang='en')
 translateEnZh:Translate=Translate(src_lang="en",tgt_lang='zh')
 model_zh = hub.Module(
-    name='auto_punc',
-    version='1.0.0')
+#    name='auto_punc',
+    version='1.0.0',directory=r'C:\file\bs\meet\py_script\model\paddlehub\auto_punc')
 model_en = PunctuationModel()
 
 @app.post("/translate")
