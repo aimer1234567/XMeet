@@ -6,6 +6,8 @@ import ffmpeg from "fluent-ffmpeg";
 import axios from "axios";
 import { Worker } from "worker_threads";
 import path from "path";
+import { roomStatusManager } from "../services/roomStatusManager";
+import userStatusManager from "../services/userStatusManager";
 class AudioStream extends Readable {
   chunks: Buffer[];
   reading: boolean;
@@ -54,14 +56,22 @@ export class SpeechRecognition {
       if (!text || text.trim() === "") {
         return;
       }
+      const srcLang=userStatusManager.getUserLang(userId);
+      const name=userStatusManager.getName(userId);
       try {
-        let translateText = await axios.post(
+        const translateText = await axios.post(
           "http://127.0.0.1:8001/translate",
-          { text: text, lang: "zh" }
+          { text, lang:srcLang, }
         );
         console.log("翻译结果：", translateText.data.translateResult);
-        webSocketServer.send(userId, "translateText", {
-          translateText: translateText.data.translateResult,
+        const roomId=userStatusManager.getUserRoomId(userId);
+        roomStatusManager.getRoomUserSet(roomId).forEach((userId) => {
+          if(srcLang!==userStatusManager.getUserLang(userId)){
+            userStatusManager.getUserWebSocket(userId)!.emit("speech", {
+              text: translateText.data.translateResult,
+              name: name
+            });
+          }
         });
       } catch (error) {
         console.log("翻译失败：", error);

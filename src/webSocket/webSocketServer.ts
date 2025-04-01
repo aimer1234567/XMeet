@@ -8,6 +8,7 @@ import { ErrorEnum } from "../common/enums/errorEnum";
 import { speechRecognitionUtil } from "../utils/speechRecognitionUtil";
 import userStatusManager from "../services/userStatusManager";
 import { userDao } from "../dao/userDao";
+import { roomStatusManager } from "../services/roomStatusManager";
 type MESSAGE_EVENT = "speech";
 export class WebSocketServer {
   private io?: SocketIOServer;
@@ -37,6 +38,9 @@ export class WebSocketServer {
           const userId = decoded.userId;
           socket.data.userId = userId; // 存储用户ID
           if(this.userStatusManager.hasUser(userId)){ //当新用户登录的时候，移除当前登录的用户
+            if(this.userStatusManager.userHasRoom(userId)){
+              roomStatusManager.roomDeleteUser(this.userStatusManager.getUserRoomId(userId),userId)
+            }
             this.send(socket.data.userId,'userIdExist',null)
           }
           await this.userStatusManager.addUser(userId,socket)
@@ -60,7 +64,6 @@ export class WebSocketServer {
           this.userStatusManager.deleteUser(socket.data.userId);
         }
       });
-
       socket.on("speech", (speech) => {
         speechRecognitionUtil.rec(socket.data.userId, speech);
       });

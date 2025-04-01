@@ -38,7 +38,7 @@ class Translate():
         
         return translated_text
 
-translateZhEn:Translate=Translate()
+translateZhEn:Translate=Translate(src_lang="zh",tgt_lang='en')
 translateEnZh:Translate=Translate(src_lang="en",tgt_lang='zh')
 model_zh = hub.Module(
     name='auto_punc',

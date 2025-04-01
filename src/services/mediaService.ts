@@ -15,7 +15,7 @@ import { webSocketServer } from "../webSocket/webSocketServer";
 import { speechRecognitionUtil } from "../utils/speechRecognitionUtil";
 import userStatusManager from "./userStatusManager";
 import {userDao} from "../dao/userDao";
-import { todo } from "node:test";
+import { roomStatusManager } from "./roomStatusManager";
 class MediaService {
   userStatusManager=userStatusManager;
   roomList: Map<string, Room> = new Map(); //房间列表
@@ -41,6 +41,7 @@ class MediaService {
       console.log("create room", roomId);
       let worker = this.getMediasoupWorker();
       this.roomList.set(roomId, new Room(roomId, worker, userId));
+      roomStatusManager.addRoomStatus(userId,roomId);  // 添加房间状态
       return Result.succuss({ isRoom: true, roomId: roomId });
     }
   }
@@ -60,6 +61,7 @@ class MediaService {
     }
     this.roomList.get(roomId)!.addPeer(new Peer(userId));
     this.userStatusManager.setUserRoomId(userId, roomId); 
+    roomStatusManager.roomAddUser(roomId, userId);  // 在房间状态管理中添加此房间的用户
     return Result.succuss();
   }
   /**
@@ -198,8 +200,11 @@ class MediaService {
       });
       this.workers.push(worker);
 
-      webSocketServer.OnDisconnect((userId) => {
+      webSocketServer.OnDisconnect(async(userId) => {
         try{
+          if(this.userStatusManager.userHasRoom(userId)){
+            roomStatusManager.roomDeleteUser(this.userStatusManager.getUserRoomId(userId),userId)
+          }
           let roomId = this.userStatusManager.getUserRoomId(userId);
           this.roomList.get(roomId)!.deletePeer(userId);
         }catch(err){
@@ -257,6 +262,7 @@ class MediaService {
     let roomId = this.userStatusManager.getUserRoomId(userId);
     this.roomList.get(roomId)!.deletePeer(userId);
     this.userStatusManager.deleteUserRoomId(userId);
+    roomStatusManager.roomDeleteUser(roomId, userId);  // 删除房间状态管理中的用户
     return Result.succuss();
   }
 
@@ -264,6 +270,8 @@ class MediaService {
     let roomId = this.userStatusManager.getUserRoomId(userId);
     let params = await this.roomList.get(roomId)!.router.dump();
     console.log({ roomId, params });
+    console.log("userStatusManager------",Object.fromEntries(userStatusManager.userStatusMap))
+    console.log("roomStatusManager------",Object.fromEntries(roomStatusManager.roomStatusMap))
     return Result.succuss(params);
   }
 }

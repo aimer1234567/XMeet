@@ -3,20 +3,24 @@ import MyError from "../common/myError";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import { randomUUID } from 'crypto';
 import { userDao } from "../dao/userDao";
+import { types } from "mediasoup";
 class UserStatus {
   public session:string;
   public userId: string;
   public userName: string;
   public name: string;
+  public lang:"zh"| "en";
+  public webSocket: Socket;
   public isRoomId: boolean = false;
   public roomId?: string;
-  public webSocket: Socket;
-  public constructor(userId: string, webSocket: Socket,session:string,userName:string,name:string) {
+  public currentUserSubtitle?:string;
+  public constructor(userId: string, webSocket: Socket,session:string,userName:string,name:string,lang:"zh"| "en") {
     this.userId = userId;
     this.webSocket = webSocket;
     this.session=session;
     this.userName=userName;
     this.name=name;
+    this.lang=lang;
   }
   public setRoomId(roomId: string) {
     this.roomId = roomId;
@@ -30,10 +34,11 @@ class UserStatus {
   }
 }
 class UserStatusManager {
-  private userStatusMap: Map<string, UserStatus> = new Map();
+   userStatusMap: Map<string, UserStatus> = new Map();
   public async addUser(userId: string, webSocket: Socket) {
+    console.log("addUser---------------------------------", userId);
     const user= await userDao.selectById(userId)
-    this.userStatusMap.set(userId, new UserStatus(userId, webSocket,randomUUID(),user.userName,user.name));
+    this.userStatusMap.set(userId, new UserStatus(userId, webSocket,randomUUID(),user.userName,user.name,user.lang as any));
   }
   public deleteUser(userId: string) {
     this.userStatusMap.delete(userId);
@@ -87,6 +92,10 @@ class UserStatusManager {
   public getName(userId: string) {
     const userStatus = this.getUserStatus(userId);
     return userStatus.name;
+  }
+  public getUserLang(userId: string){
+    const userStatus = this.getUserStatus(userId);
+    return userStatus.lang
   }
 }
 export default new UserStatusManager();

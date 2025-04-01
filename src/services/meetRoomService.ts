@@ -10,6 +10,7 @@ import Result from "../common/result";
 import userStatusManager from "./userStatusManager";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import MyError from "../common/myError";
+
 export default class meetRoomService {
   meetRoomDao: MeetRoomDao = new MeetRoomDao();
   userDao: UserDao = userDao;
@@ -37,7 +38,8 @@ export default class meetRoomService {
     meetRoom.password = data.password;
     meetRoom.remark = data.remark;
     const identifiers = await this.meetRoomDao.addMeetRoom(meetRoom);
-    return Result.succuss({ meetRoomId: identifiers![0].id });
+    let meetRoomId=identifiers![0].id
+    return Result.succuss({ meetRoomId });
   }
 
   async joinMeetRoom(userId: string, meetRoomId: string) {
