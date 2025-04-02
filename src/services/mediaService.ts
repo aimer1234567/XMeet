@@ -60,8 +60,18 @@ class MediaService {
       return Result.error(ErrorEnum.UserInRoom);
     }
     this.roomList.get(roomId)!.addPeer(new Peer(userId));
-    this.userStatusManager.setUserRoomId(userId, roomId); 
     roomStatusManager.roomAddUser(roomId, userId);  // 在房间状态管理中添加此房间的用户
+    this.userStatusManager.setUserRoomId(userId, roomId);  //在用户状态管理中设置用户所在的房间id
+    const peerList = roomStatusManager.getRoomUserList(roomId);
+    webSocketServer.send(userId, "roomAllPeer", {peerList})  // 发送用户列表给当前用户
+    const username = userStatusManager.getUserName(userId);
+    const name = userStatusManager.getName(userId);
+    roomStatusManager.getRoomUserSet(roomId).forEach((otherUserId) => {  //广播给房间中的用户，同步客户端房间用户信息，有用户进入房间
+      if(otherUserId===userId){
+        return;
+      }
+      webSocketServer.send(otherUserId, "newPeer", {username,name})
+    });
     return Result.succuss();
   }
   /**
@@ -203,7 +213,12 @@ class MediaService {
       webSocketServer.OnDisconnect(async(userId) => {
         try{
           if(this.userStatusManager.userHasRoom(userId)){
-            roomStatusManager.roomDeleteUser(this.userStatusManager.getUserRoomId(userId),userId)
+            const roomId=this.userStatusManager.getUserRoomId(userId);
+            roomStatusManager.roomDeleteUser(roomId,userId)
+            const username = userStatusManager.getUserName(userId);
+            roomStatusManager.getRoomUserSet(roomId).forEach((userId) => {  //广播给房间中的用户，同步客户端房间用户信息，有用户退出房间
+              webSocketServer.send(userId, "peerExec", {username})
+            });
           }
           let roomId = this.userStatusManager.getUserRoomId(userId);
           this.roomList.get(roomId)!.deletePeer(userId);
@@ -259,11 +274,20 @@ class MediaService {
   }
 
   peerExec(userId: string) {
-    let roomId = this.userStatusManager.getUserRoomId(userId);
+    const roomId = this.userStatusManager.getUserRoomId(userId);
     this.roomList.get(roomId)!.deletePeer(userId);
     this.userStatusManager.deleteUserRoomId(userId);
     roomStatusManager.roomDeleteUser(roomId, userId);  // 删除房间状态管理中的用户
+    const username = userStatusManager.getUserName(userId);
+    roomStatusManager.getRoomUserSet(roomId).forEach((userId) => {  //广播给房间中的用户，同步客户端房间用户信息，有用户退出房间
+      webSocketServer.send(userId, "peerExec", {username})
+    });
     return Result.succuss();
+  }
+  getRoomOwner(userId: string) {
+    const roomId = this.userStatusManager.getUserRoomId(userId);
+    const roomOwner=roomStatusManager.getRoomOwner(roomId);
+    return  Result.succuss({roomOwner});
   }
 
   async getRouterStatus(userId: string) {

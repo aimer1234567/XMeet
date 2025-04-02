@@ -64,7 +64,7 @@ export class SpeechRecognition {
           { text, lang:srcLang, }
         );
         console.log("翻译结果：", translateText.data.translateResult);
-        const roomId=userStatusManager.getUserRoomId(userId);
+        const roomId=userStatusManager.getUserRoomId(userId);// TODO: 判断一下用户是否在房间中，可能用户退出了，但是部分语音还没有发出
         roomStatusManager.getRoomUserSet(roomId).forEach((userId) => {
           if(srcLang!==userStatusManager.getUserLang(userId)){
             userStatusManager.getUserWebSocket(userId)!.emit("speech", {

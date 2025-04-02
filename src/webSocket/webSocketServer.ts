@@ -39,7 +39,12 @@ export class WebSocketServer {
           socket.data.userId = userId; // 存储用户ID
           if(this.userStatusManager.hasUser(userId)){ //当新用户登录的时候，移除当前登录的用户
             if(this.userStatusManager.userHasRoom(userId)){
-              roomStatusManager.roomDeleteUser(this.userStatusManager.getUserRoomId(userId),userId)
+              const roomId=this.userStatusManager.getUserRoomId(userId)
+              roomStatusManager.roomDeleteUser(roomId,userId)
+              const username = userStatusManager.getUserName(userId);
+              roomStatusManager.getRoomUserSet(roomId).forEach((userId) => {  //广播给房间中的用户，同步客户端房间用户信息，有用户退出房间
+                webSocketServer.send(userId, "peerExec", {username})
+              });
             }
             this.send(socket.data.userId,'userIdExist',null)
           }

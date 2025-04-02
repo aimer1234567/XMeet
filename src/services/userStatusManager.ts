@@ -3,7 +3,6 @@ import MyError from "../common/myError";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import { randomUUID } from 'crypto';
 import { userDao } from "../dao/userDao";
-import { types } from "mediasoup";
 class UserStatus {
   public session:string;
   public userId: string;
@@ -36,7 +35,6 @@ class UserStatus {
 class UserStatusManager {
    userStatusMap: Map<string, UserStatus> = new Map();
   public async addUser(userId: string, webSocket: Socket) {
-    console.log("addUser---------------------------------", userId);
     const user= await userDao.selectById(userId)
     this.userStatusMap.set(userId, new UserStatus(userId, webSocket,randomUUID(),user.userName,user.name,user.lang as any));
   }
