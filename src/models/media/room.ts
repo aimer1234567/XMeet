@@ -131,12 +131,16 @@ export default class Room {
   }
   deletePeer(userId:string){
     let peer=this.peers.get(userId)
-    peer?.close()
+    peer!.close()
     this.peers.delete(userId)
   }
 
   closeProducer(userId:string,producerId:string){
     
     this.peers.get(userId)!.closeProducer(producerId);
+  }
+
+  closeRoom(){
+    this.router.close()  
   }
 }

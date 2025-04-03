@@ -209,31 +209,23 @@ class MediaService {
         setTimeout(() => process.exit(1), 2000);
       });
       this.workers.push(worker);
-
-      webSocketServer.OnDisconnect(async(userId) => {
-        try{
-          if(this.userStatusManager.userHasRoom(userId)){
-            const roomId=this.userStatusManager.getUserRoomId(userId);
-            roomStatusManager.roomDeleteUser(roomId,userId)
-            const username = userStatusManager.getUserName(userId);
-            roomStatusManager.getRoomUserSet(roomId).forEach((userId) => {  //广播给房间中的用户，同步客户端房间用户信息，有用户退出房间
-              webSocketServer.send(userId, "peerExec", {username})
-            });
-          }
-          let roomId = this.userStatusManager.getUserRoomId(userId);
-          this.roomList.get(roomId)!.deletePeer(userId);
-        }catch(err){
-          return;
-        }
-      });
-
-      // log worker resource usage
-      /*setInterval(async () => {
-                  const usage = await worker.getResourceUsage();
-      
-                  console.info('mediasoup Worker resource usage [pid:%d]: %o', worker.pid, usage);
-              }, 120000);*/
     }
+    webSocketServer.OnDisconnect(async(userId) => {
+      try{
+        if(this.userStatusManager.userHasRoom(userId)){
+          const roomId=this.userStatusManager.getUserRoomId(userId);
+          roomStatusManager.roomDeleteUser(roomId,userId)
+          const username = userStatusManager.getUserName(userId);
+          roomStatusManager.getRoomUserSet(roomId).forEach((userId) => {  //广播给房间中的用户，同步客户端房间用户信息，有用户退出房间
+            webSocketServer.send(userId, "peerExec", {username})
+          });
+        }
+        let roomId = this.userStatusManager.getUserRoomId(userId);
+        this.roomList.get(roomId)!.deletePeer(userId);
+      }catch(err){
+        return;
+      }
+    });
   }
 
   async consume(ConsumeReq: ConsumeReq, userId: string) {
@@ -250,7 +242,6 @@ class MediaService {
   }
   closeProducer(userId: string, producerId: string) {
     let roomId = this.userStatusManager.getUserRoomId(userId);
-    this.speechRecognition.closeRecognizer(userId);
     this.roomList.get(roomId)!.closeProducer(userId, producerId);
     return Result.succuss();
   }
@@ -284,10 +275,21 @@ class MediaService {
     });
     return Result.succuss();
   }
-  getRoomOwner(userId: string) {
+  closeRoom(userId: string) {
+    const roomId = this.userStatusManager.getUserRoomId(userId);
+    roomStatusManager.getRoomUserSet(roomId).forEach((userId) => {  //广播给房间中的用户，当前房间关闭
+      webSocketServer.send(userId, "roomClose", null)
+      this.userStatusManager.deleteUserRoomId(userId);
+    });
+    roomStatusManager.deleteRoomStatus(roomId);
+    this.roomList.get(roomId)!.closeRoom();
+    return Result.succuss();
+  }
+  isRoomOwner(userId: string) {
     const roomId = this.userStatusManager.getUserRoomId(userId);
     const roomOwner=roomStatusManager.getRoomOwner(roomId);
-    return  Result.succuss({roomOwner});
+    const isRoomOwner=roomOwner===userId;
+    return  Result.succuss({isRoomOwner});
   }
 
   async getRouterStatus(userId: string) {

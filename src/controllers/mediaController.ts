@@ -94,9 +94,13 @@ export default class MediaController {
         return res.json(this.mediaService.peerExec(userId))
     }
 
-    getRoomOwner(req: Request, res: Response) {
+    isRoomOwner(req: Request, res: Response) {
         const userId=req.headers['userId'] as string
-        return res.json(this.mediaService.getRoomOwner(userId))
+        return res.json(this.mediaService.isRoomOwner(userId))
+    }
+    closeRoom(req: Request, res: Response){
+        const userId=req.headers['userId'] as string
+        return res.json(this.mediaService.closeRoom(userId))
     }
     async getRouterStatus(req: Request, res: Response, next: NextFunction) {
         const userId=req.headers['userId'] as string

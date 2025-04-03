@@ -19,7 +19,6 @@ class AudioStream extends Readable {
 
   _read() {
     if (this.chunks.length > 0) {
-      console.log("chunks", this.chunks);
       const chunk = this.chunks.shift();
       this.push(chunk);
     } else {
@@ -136,8 +135,8 @@ export class SpeechRecognition {
   closeRecognizer(userId: string) {
     let userSpeechSpace = this.userSpeechSpaceMap.get(userId);
     if (userSpeechSpace) {
-      userSpeechSpace.audioStream.endStream(); // 结束流
       userSpeechSpace.pcmStream.end(); // 结束 PCM 流
+      userSpeechSpace.audioStream.endStream(); // 结束流
     }
     this.userSpeechSpaceMap.delete(userId);
     this.recWorker.postMessage({action: 'close', data:{userId}})

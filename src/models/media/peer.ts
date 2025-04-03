@@ -1,7 +1,9 @@
 import { types } from "mediasoup";
 import { todo } from "node:test";
 import { webSocketServer } from "../../webSocket/webSocketServer";
+import {speechRecognitionUtil} from "../../utils/speechRecognitionUtil";
 export default class Peer {
+  speechRecognition=speechRecognitionUtil
   producers = new Map<string, types.Producer>();
   producerLabel =new Map<types.MediaKind,string>();
   consumers = new Map<string, types.Consumer>();
@@ -43,6 +45,9 @@ export default class Peer {
         name: `${this.peerId}`,
         consumer_id: `${producer.id}`,
       });
+      if(kind=="audio"){
+        this.speechRecognition.closeRecognizer(this.peerId); // 关闭语音识别
+      }
       producer.close();
       this.producers.delete(producer.id);
       this.producerLabel.delete(kind)
@@ -76,7 +81,7 @@ export default class Peer {
       this.consumers.delete(consumer.id);
     });
     consumer.on("producerclose", () => {
-      this.consumers.get(consumer.id)?.close()
+      this.consumers.get(consumer.id)!.close()
       this.consumers.delete(consumer.id);
       webSocketServer.send(userId,"consumerClosed",{
         consumerId: consumer.id,kind:consumer.kind
