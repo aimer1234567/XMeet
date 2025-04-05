@@ -1,22 +1,16 @@
 import express from "express";
 import "reflect-metadata";
-import userRouter from "./routes/userRouter";
-import expressOasGenerator, { init } from "express-oas-generator";
+import expressOasGenerator from "express-oas-generator";
 import swaggerUi from "swagger-ui-express";
 import AppDataSource from "./common/config/database";
 import errorHandler from "./middlewares/errorHandler";
 import sourceMapSupport from "source-map-support";
-import WebSocket = require("ws");
 import https from "https";
 import http from "http";
-import { MediaService, mediaService } from "./services/mediaService";
-import mediaRouter from "./routes/mediaRouter";
 import verifyHandler from "./middlewares/verifyHandler";
 import cors from "cors";
 import fs from "fs";
 import config from "./common/config/config";
-import { webSocketServer } from "./webSocket/webSocketServer";
-import { speechRecognitionUtil } from "./utils/speechRecognitionUtil";
 import initTranslationProcess from "./utils/initTranslationProcess";
 import path from 'path'
 
@@ -25,7 +19,6 @@ async function initApp() {
   // process.env.PATH += `;${voskLibPath}`;   //因为要在work线程中使用vosk，但是work线程不能找到其dll，已经在系统中设置好了环境变量
   // console.log("Vosk DLL 路径:", voskLibPath);
   //initTranslationProcess(); //初始化语音识别进程
-  speechRecognitionUtil.initTranslationService(); //初始化语音识别，加载语音识别模型
   await AppDataSource.initialize() //初始化数据库
     .then(() => {
       console.log("数据库初始化成功");
@@ -33,7 +26,13 @@ async function initApp() {
     .catch((err) => {
       console.error("数据库初始化失败", err);
     });
-  await mediaService.init(); //初始化mediasoup工作线程
+  await import("./utils/speechRecognitionUtil").then( ({ speechRecognitionUtil })=> {
+    speechRecognitionUtil.initTranslationService(); //初始化语音识别，加载语音识别模型
+})
+  await import("./services/mediaService").then(async ({ mediaService }) => {
+    await mediaService.init(); //初始化mediasoup工作线程
+  })
+  const {webSocketServer}=await import("./webSocket/webSocketServer")
   const options = {
     key: fs.readFileSync(config.webServer.https.key, "utf-8"),
     cert: fs.readFileSync(config.webServer.https.cert, "utf-8"),
@@ -53,14 +52,17 @@ async function initApp() {
   app.use(cors());
   app.use(express.json());
   app.use(verifyHandler);
-  app.use("/media", mediaRouter);
-  app.use("/user", userRouter);
+  await import('./routes/userRouter').then((userRouter)=>{
+    app.use("/user", userRouter.default);
+  })
+  await import("./routes/mediaRouter").then((mediaRouter) => {
+    app.use("/media", mediaRouter.default);
+  });
   await import("./routes/meetRoomRouter").then((meetRoomRouter) => {
     app.use("/meetRoom", meetRoomRouter.default);
-    console.log("meetRoomRouter loaded");
   });
-  console.log("errorHandler loaded");
   app.use(errorHandler);
+  console.log("errorHandler loaded");
   let server;
   if (config.webServer.isHttps) {
     server = https.createServer(options, app);

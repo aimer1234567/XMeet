@@ -8,6 +8,8 @@ import { Worker } from "worker_threads";
 import path from "path";
 import { roomStatusManager } from "../services/roomStatusManager";
 import userStatusManager from "../services/userStatusManager";
+import meetSpeechDao from "../dao/MeetSpeechDao";
+import MeetSpeech from "../models/entity/MeetSpeech";
 class AudioStream extends Readable {
   chunks: Buffer[];
   reading: boolean;
@@ -49,29 +51,39 @@ class UserSpeechSpace {
 export class SpeechRecognition {
   recWorker!: Worker;
   userSpeechSpaceMap: Map<string, UserSpeechSpace> = new Map();
+  // TODO: 目前只能识别中文和英文
   initTranslationService() {
     this.recWorker = new Worker(path.join(__dirname, "./recWork.js"));
     this.recWorker.on("message", async ({ userId, text }) => {
       if (!text || text.trim() === "") {
         return;
       }
+      if (text.trim() === "the" || text.trim() === "我"){
+        return;
+      }
       const srcLang=userStatusManager.getUserLang(userId);
       const name=userStatusManager.getName(userId);
       try {
-        const translateText = await axios.post(
+        const result = await axios.post(
           "http://127.0.0.1:8001/translate",
           { text, lang:srcLang, }
         );
-        console.log("翻译结果：", translateText.data.translateResult);
+        const translateText=result.data.translateText
+        const punctuatedText=result.data.punctuatedText
+        console.log("翻译结果：", result.data.translateText);
         const roomId=userStatusManager.getUserRoomId(userId);// TODO: 判断一下用户是否在房间中，可能用户退出了，但是部分语音还没有发出
         roomStatusManager.getRoomUserSet(roomId).forEach((userId) => {
           if(srcLang!==userStatusManager.getUserLang(userId)){
             userStatusManager.getUserWebSocket(userId)!.emit("speech", {
-              text: translateText.data.translateResult,
+              text: translateText,
               name: name
             });
           }
         });
+        const srcMeetSheep=new MeetSpeech(translateText, new Date(), userId, roomId,  srcLang==="en"?"zh":"en")
+        const tgtMeetCheep=new MeetSpeech(punctuatedText, new Date(), userId, roomId, srcLang)
+        meetSpeechDao.insertSpeech(srcMeetSheep)
+        meetSpeechDao.insertSpeech(tgtMeetCheep)
       } catch (error) {
         console.log("翻译失败：", error);
       }
@@ -125,7 +137,6 @@ export class SpeechRecognition {
     console.log("开始语音识别");
   }
   rec(userId: string, buffer: Buffer) {
-    console.log("输入长度", buffer.length);
     if (!this.userSpeechSpaceMap.get(userId)) {
       return;
     }

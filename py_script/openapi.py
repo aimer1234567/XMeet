@@ -55,11 +55,11 @@ async def root(translationRequest: TranslationRequest):
     else:
         punctuatedText=model_en.restore_punctuation(text)
     if(translationRequest.lang=='zh'):
-        translateResult=translateZhEn.translate_text(punctuatedText)
-        return {"translateResult":translateResult,"punctuatedText":punctuatedText}
+        translateText=translateZhEn.translate_text(punctuatedText)
+        return {"translateText":translateText,"punctuatedText":punctuatedText}
     else:
-        translateResult=translateEnZh.translate_text(punctuatedText)
-        return {"translateResult":translateResult,"punctuatedText":punctuatedText}
+        translateText=translateEnZh.translate_text(punctuatedText)
+        return {"translateText":translateText,"punctuatedText":punctuatedText}
 
 if __name__ == "__main__":
     import uvicorn

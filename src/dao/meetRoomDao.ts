@@ -2,12 +2,12 @@ import AppDataSource from "../common/config/database";
 import MyError from "../common/myError";
 import MeetRoom from "../models/entity/meetRoom";
 import { QueryFailedError } from "typeorm";
-export default class MeetRoomDao {
+class MeetRoomDao {
   private meetRoomRepository = AppDataSource.getRepository(MeetRoom);
-  private meetRoomQueryBuilder = this.meetRoomRepository.createQueryBuilder();
   async addMeetRoom(meetRoom: MeetRoom) {
     try{
-          const { identifiers }=await this.meetRoomQueryBuilder.insert().into(MeetRoom).values(meetRoom).execute();
+          const meetRoomQueryBuilder= this.meetRoomRepository.createQueryBuilder();
+          const { identifiers }=await meetRoomQueryBuilder.insert().into(MeetRoom).values(meetRoom).execute();
           return identifiers
     }catch(err){
       if(err instanceof QueryFailedError){
@@ -26,6 +26,7 @@ export default class MeetRoomDao {
           throw new Error(err.message)
       }
     }
-    return meetRoom
+    return meetRoom!
   }
 }
+export default new MeetRoomDao();

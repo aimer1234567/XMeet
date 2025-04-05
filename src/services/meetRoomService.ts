@@ -1,8 +1,9 @@
-import MeetRoomDao from "../dao/meetRoomDao";
-import {userDao,UserDao} from "../dao/userDao";
+import meetRoomDao from "../dao/meetRoomDao";
+import { userDao, UserDao } from "../dao/userDao";
 import {
   CreateMeetRoomReq,
-  CreateMeetRoomReqInstant,
+  CreateMeetRoomInstantReq,
+  QueryMeetRoomRecordReq,
 } from "../models/req/meetRoomReq";
 import MeetRoom from "../models/entity/meetRoom";
 import { plainToInstance } from "class-transformer";
@@ -10,12 +11,16 @@ import Result from "../common/result";
 import userStatusManager from "./userStatusManager";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import MyError from "../common/myError";
-
+import meetRoomRecordDao from "../dao/meetRoomRecordDao";
 export default class meetRoomService {
-  meetRoomDao: MeetRoomDao = new MeetRoomDao();
+  meetRoomDao = meetRoomDao;
   userDao: UserDao = userDao;
-  async createMeetRoomInstant(userId: string, data: CreateMeetRoomReqInstant) {
-    if(userStatusManager.userHasRoom(userId)){
+  meetRoomRecordDao=meetRoomRecordDao;
+  // TODO: 没有房间关闭这个状态！在数据库查询到房间关闭了，就要标记，不再让用户进来
+  // TODO: 因为有些发起会议的用户可能意外退出，导致其创建的房间没有被删除，但是其又不是那个房间的成员。所以需要定时任务来删除没有被使用的房间。
+  // TODO: 同时当用户要再次创建房间时，需要判断是否已经存在他创建的房间（roomOwner）正在运行
+  async createMeetRoomInstant(userId: string, data: CreateMeetRoomInstantReq) {
+    if (userStatusManager.userHasRoom(userId)) {
       throw new MyError(ErrorEnum.UserInRoom);
     }
     const meetRoom = plainToInstance(MeetRoom, {});
@@ -38,12 +43,12 @@ export default class meetRoomService {
     meetRoom.password = data.password;
     meetRoom.remark = data.remark;
     const identifiers = await this.meetRoomDao.addMeetRoom(meetRoom);
-    let meetRoomId=identifiers![0].id
+    let meetRoomId = identifiers![0].id;
     return Result.succuss({ meetRoomId });
   }
 
   async joinMeetRoom(userId: string, meetRoomId: string) {
-    if(userStatusManager.userHasRoom(userId)){
+    if (userStatusManager.userHasRoom(userId)) {
       throw new MyError(ErrorEnum.UserInRoom);
     }
     const meetRoom = await this.meetRoomDao.getMeetRoomById(meetRoomId);
@@ -61,5 +66,18 @@ export default class meetRoomService {
     meetRoom.creatorId = userId;
     const identifiers = await this.meetRoomDao.addMeetRoom(meetRoom);
     return Result.succuss({ roomId: identifiers![0].id });
+  }
+
+  async getMeetRoomRecord(userId: string, data: QueryMeetRoomRecordReq) {
+    const  params={
+      userId:userId,
+      name:data.meetRoomName,
+      startTimeStart: data.startTime,
+      startTimeEnd: data.endTime,
+      page: data.page, // 当前页码
+      pageSize:data.pageSize // 每页大小
+    }
+    const queryResult= await this.meetRoomRecordDao.queryMeetRecords(params);
+    return Result.succuss(queryResult)
   }
 }

@@ -16,6 +16,7 @@ import { speechRecognitionUtil } from "../utils/speechRecognitionUtil";
 import userStatusManager from "./userStatusManager";
 import {userDao} from "../dao/userDao";
 import { roomStatusManager } from "./roomStatusManager";
+import MeetRoomRecord from "../models/entity/meetRoomRecord";
 class MediaService {
   userStatusManager=userStatusManager;
   roomList: Map<string, Room> = new Map(); //房间列表
@@ -281,7 +282,7 @@ class MediaService {
       webSocketServer.send(userId, "roomClose", null)
       this.userStatusManager.deleteUserRoomId(userId);
     });
-    roomStatusManager.deleteRoomStatus(roomId);
+    roomStatusManager.closeRoomStatus(roomId);
     this.roomList.get(roomId)!.closeRoom();
     return Result.succuss();
   }

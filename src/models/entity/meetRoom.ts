@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
-@Entity()
+@Entity({name:'meet'})
 class MeetRoom{
     @PrimaryGeneratedColumn("uuid")
     id!: string
