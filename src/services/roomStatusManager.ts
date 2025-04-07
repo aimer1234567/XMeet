@@ -55,6 +55,8 @@ class RoomStatusManager{
         let roomStatus=this.roomStatusMap.get(roomId) as RoomStatus;
         const endTime=dayjs();
         const diffMinute = endTime.diff(dayjs(roomStatus.startTime),"minute");
+        //关闭会议状态
+        meetRoomDao.updateIsOver(roomId)
         //写入会议记录
         const {name}=await meetRoomDao.getMeetRoomById(roomId)
         meetUserDao.insertUsersToMeet(roomId,[...roomStatus.userIdSetJoin])
@@ -102,6 +104,14 @@ class RoomStatusManager{
             throw new MyError(ErrorEnum.RoomNotExist)
         }
         return this.roomStatusMap.get(roomId)!.getRoomOwner()
+    }
+
+    isRoomOwner(userId:string){
+        for (const roomStatus of this.roomStatusMap.values()) {
+            if (roomStatus.roomOwner === userId) {
+                return true;
+            }
+        }  
     }
 }
 

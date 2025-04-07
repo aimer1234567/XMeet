@@ -21,7 +21,9 @@ class MeetRoom{
     isInstant:boolean
     @Column()
     password:string
-    constructor(creatorId:string,startTime:Date,durationMinutes:number,name:string,remark:string,inviteOnly:boolean,isPassword:boolean,isInstant:boolean,password:string) {
+    @Column({name:"is_over"})
+    isOver:boolean
+    constructor(creatorId:string,startTime:Date,durationMinutes:number,name:string,remark:string,inviteOnly:boolean,isPassword:boolean,isInstant:boolean,password:string,isOver:boolean) {
         this.creatorId = creatorId;
         this.startTime = startTime;
         this.durationMinutes = durationMinutes;
@@ -31,6 +33,7 @@ class MeetRoom{
         this.isPassword = isPassword;
         this.isInstant = isInstant;
         this.password = password;
+        this.isOver = isOver;
     }
 }
 

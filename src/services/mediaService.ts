@@ -16,12 +16,12 @@ import { speechRecognitionUtil } from "../utils/speechRecognitionUtil";
 import userStatusManager from "./userStatusManager";
 import {userDao} from "../dao/userDao";
 import { roomStatusManager } from "./roomStatusManager";
-import MeetRoomRecord from "../models/entity/meetRoomRecord";
+import IntervalUtil from "../utils/intervalUtil";
 class MediaService {
   userStatusManager=userStatusManager;
   roomList: Map<string, Room> = new Map(); //房间列表
   workers: Array<types.Worker<types.AppData>> = []; //mediasoup工作线程
-  // userIdToRoomId: Map<string, string> = new Map();
+  overMRInterval=new IntervalUtil();
   speechRecognition = speechRecognitionUtil;
   userDao=userDao;
   nextMediasoupWorkerIdx = 0; //mediasoup工作线程索引
@@ -43,6 +43,9 @@ class MediaService {
       let worker = this.getMediasoupWorker();
       this.roomList.set(roomId, new Room(roomId, worker, userId));
       roomStatusManager.addRoomStatus(userId,roomId);  // 添加房间状态
+      this.overMRInterval.add(roomId, config.meetServer.closeTime, () => {
+        this.closeRoom(userId)
+      });    // 添加会议超时，自动关闭房间
       return Result.succuss({ isRoom: true, roomId: roomId });
     }
   }

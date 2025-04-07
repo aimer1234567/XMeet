@@ -23,10 +23,30 @@ class MeetRoomDao {
       meetRoom=await this.meetRoomRepository.findOneBy({id:id})
     }catch(err){
       if(err instanceof QueryFailedError){
-          throw new Error(err.message)
+          throw new MyError(err.message)
       }
     }
     return meetRoom!
   }
+
+    // 修改会议室的 isOver 字段为 true
+    async updateIsOver(roomId: string) {
+      try {
+        // 使用 QueryBuilder 来更新 isOver 字段为 true
+        const result = await this.meetRoomRepository
+          .createQueryBuilder()
+          .update(MeetRoom)
+          .set({ isOver: true })
+          .where("id = :id", { id: roomId })
+          .execute();
+  
+        return result;
+      } catch (err) {
+        if (err instanceof QueryFailedError) {
+          console.log(err.driverError);
+          throw new MyError(err.message);
+        }
+      }
+    }
 }
 export default new MeetRoomDao();

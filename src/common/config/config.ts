@@ -29,6 +29,13 @@ export default {
             text:"Hello, this is a XMeet."// 邮件文本内容
         }
     },
+    meetServer:{
+      closeTime:60,//会议超时时间，单位分钟
+      remindTime:15,//会议超时提醒时间，单位分钟
+      maxCloseTime:120, // 会议最大超时时间，单位分钟
+      maxPeer:30,// 最大用户数
+      maxSpeech:4,// 最大发言数
+    },
     webServer:{
       isHttps:true,
       port:8080,
@@ -45,7 +52,7 @@ export default {
     },
     mediasoup: {
         // Worker settings
-        numWorkers: Object.keys(os.cpus()).length,
+        numWorkers: Object.keys(os.cpus()).length/2,
         worker: {
           rtcMinPort: 10000,
           rtcMaxPort: 10100,

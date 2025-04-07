@@ -1,7 +1,5 @@
-import vosk from "vosk";
 import config from "../common/config/config";
 import { PassThrough, Readable, ReadableOptions } from "stream";
-import { webSocketServer } from "../webSocket/webSocketServer";
 import ffmpeg from "fluent-ffmpeg";
 import axios from "axios";
 import { Worker } from "worker_threads";
@@ -10,6 +8,7 @@ import { roomStatusManager } from "../services/roomStatusManager";
 import userStatusManager from "../services/userStatusManager";
 import meetSpeechDao from "../dao/MeetSpeechDao";
 import MeetSpeech from "../models/entity/MeetSpeech";
+import { WorkerTaskQueue } from "./workerTaskQueue";
 class AudioStream extends Readable {
   chunks: Buffer[];
   reading: boolean;
@@ -51,10 +50,17 @@ class UserSpeechSpace {
 export class SpeechRecognition {
   recWorker!: Worker;
   userSpeechSpaceMap: Map<string, UserSpeechSpace> = new Map();
+  rceTaskQueue=new WorkerTaskQueue<{action:string,data:any}>()
   // TODO: 目前只能识别中文和英文
   initTranslationService() {
+    // 如果已经存在旧的 Worker，清理掉（避免重复绑定）
+    if (this.recWorker) {
+      this.recWorker.terminate();
+    }
     this.recWorker = new Worker(path.join(__dirname, "./recWork.js"));
+    this.rceTaskQueue.setWorker(this.recWorker)
     this.recWorker.on("message", async ({ userId, text }) => {
+      this.rceTaskQueue.handleNextTaskDone()
       if (!text || text.trim() === "") {
         return;
       }
@@ -90,11 +96,13 @@ export class SpeechRecognition {
     });
 
     this.recWorker.on("error", (err) => {
+      this.rceTaskQueue.handleNextTaskDone()
       console.error("Worker 线程错误:", err);
     });
     this.recWorker.on("exit", (code) => {
       if (code !== 0) {
         console.error(`Worker 线程退出，错误码 ${code}`);
+        this.initTranslationService() //非正常退出，重新初始化
       }
     });
   }
@@ -132,7 +140,7 @@ export class SpeechRecognition {
     //创建一个单独的工作线程
     pcmStream.on("data", async (audioBuffer) => {
       if (audioBuffer.length === 0) return;
-      this.recWorker.postMessage({action:'newData',data:{userId, audioBuffer} });
+      this.rceTaskQueue.addTaskToQueue({action:'newData',data:{userId, audioBuffer} })
     });
     console.log("开始语音识别");
   }
@@ -150,7 +158,7 @@ export class SpeechRecognition {
       userSpeechSpace.audioStream.endStream(); // 结束流
     }
     this.userSpeechSpaceMap.delete(userId);
-    this.recWorker.postMessage({action: 'close', data:{userId}})
+    this.rceTaskQueue.addTaskToQueue({action: 'close', data:{userId}})
     console.log("关闭语音识别");
   }
 }

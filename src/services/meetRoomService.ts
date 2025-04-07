@@ -12,21 +12,25 @@ import userStatusManager from "./userStatusManager";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import MyError from "../common/myError";
 import meetRoomRecordDao from "../dao/meetRoomRecordDao";
+import { roomStatusManager } from "./roomStatusManager";
 export default class meetRoomService {
   meetRoomDao = meetRoomDao;
   userDao: UserDao = userDao;
   meetRoomRecordDao=meetRoomRecordDao;
-  // TODO: 没有房间关闭这个状态！在数据库查询到房间关闭了，就要标记，不再让用户进来
-  // TODO: 因为有些发起会议的用户可能意外退出，导致其创建的房间没有被删除，但是其又不是那个房间的成员。所以需要定时任务来删除没有被使用的房间。
-  // TODO: 同时当用户要再次创建房间时，需要判断是否已经存在他创建的房间（roomOwner）正在运行
+
+  // 
   async createMeetRoomInstant(userId: string, data: CreateMeetRoomInstantReq) {
     if (userStatusManager.userHasRoom(userId)) {
       throw new MyError(ErrorEnum.UserInRoom);
+    }
+    if (roomStatusManager.isRoomOwner(userId)){
+      throw new MyError(ErrorEnum.UserIsRoomOwner);
     }
     const meetRoom = plainToInstance(MeetRoom, {});
     meetRoom.creatorId = userId;
     meetRoom.startTime = new Date();
     meetRoom.durationMinutes = 90;
+    meetRoom.isOver = false;
     const { name } = await this.userDao.selectById(userId);
     if (!data.name) {
       meetRoom.name = `${name}的临时会议`;
@@ -43,7 +47,7 @@ export default class meetRoomService {
     meetRoom.password = data.password;
     meetRoom.remark = data.remark;
     const identifiers = await this.meetRoomDao.addMeetRoom(meetRoom);
-    let meetRoomId = identifiers![0].id;
+    const meetRoomId = identifiers![0].id;
     return Result.succuss({ meetRoomId });
   }
 
@@ -52,7 +56,7 @@ export default class meetRoomService {
       throw new MyError(ErrorEnum.UserInRoom);
     }
     const meetRoom = await this.meetRoomDao.getMeetRoomById(meetRoomId);
-    if (!meetRoom) {
+    if (!meetRoom || meetRoom.isOver) {  //判断房间是否存在或者关闭
       throw new MyError(ErrorEnum.RoomNotExist);
     }
     return Result.succuss({

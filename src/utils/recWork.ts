@@ -41,9 +41,9 @@ parentPort!.on("message", async (message) => {
     if (speech) {
       let speechToText = recognizer.result();
       console.log("接收到音频数据：", speechToText.text);
-      parentPort?.postMessage({ userId, text: speechToText.text});
+      parentPort!.postMessage({ userId, text: speechToText.text});
     }else{
-      parentPort?.postMessage({ userId, text: ""});
+      parentPort!.postMessage({ userId, text: ""});
     }
 }
 });

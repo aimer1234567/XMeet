@@ -1,5 +1,4 @@
 import {Entity,PrimaryColumn,PrimaryGeneratedColumn,Column} from 'typeorm'
-import { Data } from 'ws'
 
 @Entity({name:"meet_speech"})
 export default class MeetSpeech{
