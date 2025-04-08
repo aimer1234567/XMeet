@@ -39,7 +39,6 @@ class MeetRoomDao {
           .set({ isOver: true })
           .where("id = :id", { id: roomId })
           .execute();
-  
         return result;
       } catch (err) {
         if (err instanceof QueryFailedError) {

@@ -32,6 +32,8 @@ async function initApp() {
   await import("./services/mediaService").then(async ({ mediaService }) => {
     await mediaService.init(); //初始化mediasoup工作线程
   })
+  const meetSummaryUtil=(await import("./utils/meetSummaryUtil")).default
+  meetSummaryUtil.initMeetSummaryService();  //初始化会议总结服务
   const {webSocketServer}=await import("./webSocket/webSocketServer")
   const options = {
     key: fs.readFileSync(config.webServer.https.key, "utf-8"),

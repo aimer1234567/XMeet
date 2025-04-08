@@ -19,5 +19,5 @@ export const AppDataSource = new DataSource({
   entities, // 将所有实体放到数组中
   migrations: [],
 });
-
+console.log(entities);
 export default AppDataSource;

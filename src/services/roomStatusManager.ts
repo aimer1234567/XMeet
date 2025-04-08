@@ -5,7 +5,7 @@ import meetRoomRecordDao from "../dao/meetRoomRecordDao";
 import meetRoomDao from "../dao/meetRoomDao";
 import MeetRoomRecord from "../models/entity/meetRoomRecord";
 import dayjs from "dayjs";
-import MeetUser from "../models/entity/meetUser";
+import meetSummaryUtil from "../utils/meetSummaryUtil";
 import meetUserDao from "../dao/meetUserDao";
 class RoomStatus{
     roomId: string;
@@ -55,12 +55,14 @@ class RoomStatusManager{
         let roomStatus=this.roomStatusMap.get(roomId) as RoomStatus;
         const endTime=dayjs();
         const diffMinute = endTime.diff(dayjs(roomStatus.startTime),"minute");
+        await meetSummaryUtil.summary(roomId)
         //关闭会议状态
         meetRoomDao.updateIsOver(roomId)
         //写入会议记录
         const {name}=await meetRoomDao.getMeetRoomById(roomId)
         meetUserDao.insertUsersToMeet(roomId,[...roomStatus.userIdSetJoin])
         meetRoomRecordDao.addMeetRoomRecord(new MeetRoomRecord(roomId,roomStatus.startTime,diffMinute,name,roomStatus.roomOwner,))
+        //启动会议总结任务
         this.roomStatusMap.delete(roomId);
     }
     hasRoomStatus(roomId:string){

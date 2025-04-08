@@ -59,6 +59,25 @@ class MeetRoomRecordDao {
         pageSize,
       }
   }
+    // 新增更新 wordCloud 方法
+    async updateSummary(id: string, wordCloud: any,durationPieChart:any,chatHeatMap:any) {
+      const record = await this.meetRoomRecordRepository.findOneBy({ id });
+      if (!record) {
+        throw new MyError("Record not found");
+      }
+      // 更新 wordCloud 字段
+      record.wordCloud = wordCloud;
+      record.durationPieChart=durationPieChart;
+      record.chatHeatMap=chatHeatMap;
+      // 保存更新后的记录
+      await this.meetRoomRecordRepository.save(record);
+      return record;
+    }
+
+    async queryMeetRecordById(id:string){
+      const record=await this.meetRoomRecordRepository.findOneBy({id})
+      return record
+    }
 }
 const meetRoomRecordDao = new MeetRoomRecordDao();
 export default meetRoomRecordDao;

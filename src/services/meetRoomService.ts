@@ -84,4 +84,17 @@ export default class meetRoomService {
     const queryResult= await this.meetRoomRecordDao.queryMeetRecords(params);
     return Result.succuss(queryResult)
   }
+
+  async getMeetRoomSummary(userId: string,roomId: string) {
+    // TODO: 检查用户是否有权限
+    const meetRoomRecord=await this.meetRoomRecordDao.queryMeetRecordById(roomId)
+    const durationPieChart=meetRoomRecord!.durationPieChart
+    const chatHeatMap=meetRoomRecord!.chatHeatMap
+    const wordCloud=meetRoomRecord!.wordCloud
+    return Result.succuss({
+      durationPieChart,
+      chatHeatMap,
+      wordCloud
+    })
+  }
 }

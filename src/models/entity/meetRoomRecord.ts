@@ -11,7 +11,7 @@ class MeetRoomRecord {
   @Column({name:'duration_pie_chart',type:'json', nullable: true })
   durationPieChart?: any;
   @Column({name:'word_cloud',type:'json', nullable: true })
-  wordCloud?: Date;
+  wordCloud?: any;
   @Column()
   time: number;
   @Column({name:'start_time',type:'datetime'})
