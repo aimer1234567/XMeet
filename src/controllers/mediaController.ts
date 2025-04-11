@@ -4,10 +4,11 @@ import { ConnectTransportReq,ProduceReq,ConsumeReq} from '../models/req/mediaReq
 import MyError from '../common/myError'
 export default class MediaController {
     mediaService:MediaService=mediaService
-    createRoom(req: Request, res: Response) {
+    async createRoom(req: Request, res: Response ,next:NextFunction) {
         let roomId=req.body.roomId
         let userId=req.headers['userId'] as string
-        return res.json(this.mediaService.createRoom(roomId,userId))
+        const result=await this.mediaService.createRoom(roomId,userId)
+        return res.json(result)
     }
     joinRoom(req: Request, res: Response){
         let roomId=req.body.roomId

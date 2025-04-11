@@ -32,6 +32,7 @@ parentPort!.on("message", async (message) => {
       console.log(`创建用户 ${data.userId} 的 Recognizer`);
     }
   }else if(action==='close'){
+    console.log("音频关闭",data.userId)
     userRecognizers.delete(data.userId);
   }else if(action==='newData'){
     const {userId,audioBuffer}=data

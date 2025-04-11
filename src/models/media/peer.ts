@@ -1,7 +1,7 @@
 import { types } from "mediasoup";
-import { todo } from "node:test";
 import { webSocketServer } from "../../webSocket/webSocketServer";
 import {speechRecognitionUtil} from "../../utils/speechRecognitionUtil";
+import { logger } from "../../common/logger";
 export default class Peer {
   speechRecognition=speechRecognitionUtil
   producers = new Map<string, types.Producer>();
@@ -19,8 +19,9 @@ export default class Peer {
 
   async connectTransport(transportId: string, dtlsParameters: unknown) {
     if (!this.transports.has(transportId)) {
-      console.log(`transport not found -------------${transportId}`);
-      return;}
+      logger.debug(`transport not found`,{transportId});
+      return
+    }
     await this.transports.get(transportId)!.connect({
       dtlsParameters: dtlsParameters,
     });

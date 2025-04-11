@@ -7,114 +7,134 @@ import MeetRoomRecord from "../models/entity/meetRoomRecord";
 import dayjs from "dayjs";
 import meetSummaryUtil from "../utils/meetSummaryUtil";
 import meetUserDao from "../dao/meetUserDao";
-class RoomStatus{
-    roomId: string;
-    roomOwner: string;
-    userIdSetIng= new Set<string>();
-    userIdSetJoin= new Set<string>();
-    startTime: Date;
-    constructor(roomId: string,roomOwner:string,startTime: Date) {
-      this.roomId = roomId;
-      this.roomOwner = roomOwner;
-      this.startTime = startTime;
+class RoomStatus {
+  roomId: string;
+  roomOwner: string;
+  roomName: string;
+  userIdSetIng = new Set<string>();
+  userIdSetJoin = new Set<string>();
+  startTime: Date;
+  constructor(roomId: string, roomOwner: string, startTime: Date,roomName:string ) {
+    this.roomId = roomId;
+    this.roomOwner = roomOwner;
+    this.startTime = startTime;
+    this.roomName = roomName;
+  }
+  addUserByUserId(userId: string) {
+    if (!this.userIdSetIng.has(userId)) {
+      this.userIdSetIng.add(userId);
     }
-    addUserByUserId(userId:string){
-        if(!this.userIdSetIng.has(userId)){
-            this.userIdSetIng.add(userId)
-        }
-        if(!this.userIdSetJoin.has(userId)){
-            this.userIdSetJoin.add(userId)
-        }
+    if (!this.userIdSetJoin.has(userId)) {
+      this.userIdSetJoin.add(userId);
     }
+  }
 
-     deleteUserByUserId(userId:string){
-        if(this.userIdSetIng.has(userId)){
-            this.userIdSetIng.delete(userId)
-        }
+  deleteUserByUserId(userId: string) {
+    if (this.userIdSetIng.has(userId)) {
+      this.userIdSetIng.delete(userId);
     }
-    getRoomOwner(){
-        return this.roomOwner
-    }
+  }
+  getRoomOwner() {
+    return this.roomOwner;
+  }
 }
 /**
  * 房间状态管理
  */
-class RoomStatusManager{
-    roomStatusMap=new Map<string,RoomStatus>();
-    addRoomStatus(userId:string,roomId:string){
-        if(this.roomStatusMap.has(roomId)){
-            throw new MyError(ErrorEnum.RoomIsExist)
-        }
-        const roomStatus=new RoomStatus(roomId,userId,new Date());
-        this.roomStatusMap.set(roomId,roomStatus);
+class RoomStatusManager {
+  roomStatusMap = new Map<string, RoomStatus>();
+  async addRoomStatus(userId: string, roomId: string) {
+    if (this.roomStatusMap.has(roomId)) {
+      throw new MyError(ErrorEnum.RoomIsExist);
     }
-    async closeRoomStatus(roomId:string){
-        if(!this.roomStatusMap.has(roomId)){
-            throw new MyError(ErrorEnum.RoomNotExist)
-        }
-        let roomStatus=this.roomStatusMap.get(roomId) as RoomStatus;
-        const endTime=dayjs();
-        const diffMinute = endTime.diff(dayjs(roomStatus.startTime),"minute");
-        await meetSummaryUtil.summary(roomId)
-        //关闭会议状态
-        meetRoomDao.updateIsOver(roomId)
-        //写入会议记录
-        const {name}=await meetRoomDao.getMeetRoomById(roomId)
-        meetUserDao.insertUsersToMeet(roomId,[...roomStatus.userIdSetJoin])
-        meetRoomRecordDao.addMeetRoomRecord(new MeetRoomRecord(roomId,roomStatus.startTime,diffMinute,name,roomStatus.roomOwner,))
-        //启动会议总结任务
-        this.roomStatusMap.delete(roomId);
+    const meetRoom=await meetRoomDao.getMeetRoomById(roomId)
+    const roomStatus = new RoomStatus(roomId, userId, new Date(),meetRoom.name);
+    this.roomStatusMap.set(roomId, roomStatus);
+  }
+  async closeRoomStatus(roomId: string) {
+    if (!this.roomStatusMap.has(roomId)) {
+      throw new MyError(ErrorEnum.RoomNotExist);
     }
-    hasRoomStatus(roomId:string){
-        return this.roomStatusMap.has(roomId);
+    let roomStatus = this.roomStatusMap.get(roomId) as RoomStatus;
+    const endTime = dayjs();
+    const diffMinute = endTime.diff(dayjs(roomStatus.startTime), "minute");
+    await meetSummaryUtil.summary(roomId);
+    //关闭会议状态
+    meetRoomDao.updateIsOver(roomId);
+    //写入会议记录
+    const { name } = await meetRoomDao.getMeetRoomById(roomId);
+    meetUserDao.insertUsersToMeet(roomId, [...roomStatus.userIdSetJoin]);
+    meetRoomRecordDao.addMeetRoomRecord(
+      new MeetRoomRecord(
+        roomId,
+        roomStatus.startTime,
+        diffMinute,
+        name,
+        roomStatus.roomOwner
+      )
+    );
+    //启动会议总结任务
+    this.roomStatusMap.delete(roomId);
+  }
+  hasRoomStatus(roomId: string) {
+    return this.roomStatusMap.has(roomId);
+  }
+  roomAddUser(roomId: string, userId: string) {
+    if (!this.roomStatusMap.has(roomId)) {
+      throw new MyError(ErrorEnum.RoomNotExist);
     }
-    roomAddUser(roomId:string,userId:string){
-        if(!this.roomStatusMap.has(roomId)){
-            throw new MyError(ErrorEnum.RoomNotExist)
-        }
-        this.roomStatusMap.get(roomId)!.addUserByUserId(userId);
+    this.roomStatusMap.get(roomId)!.addUserByUserId(userId);
+  }
+  roomDeleteUser(roomId: string, userId: string) {
+    if (!this.roomStatusMap.has(roomId)) {
+      throw new MyError(ErrorEnum.RoomNotExist);
     }
-    roomDeleteUser(roomId:string,userId:string){
-        if(!this.roomStatusMap.has(roomId)){
-            throw new MyError(ErrorEnum.RoomNotExist)
-        }
-        const roomStatus=this.roomStatusMap.get(roomId);
-        roomStatus!.deleteUserByUserId(userId)
-    }
+    const roomStatus = this.roomStatusMap.get(roomId);
+    roomStatus!.deleteUserByUserId(userId);
+  }
 
-    getRoomUserSet(roomId:string){
-        if(!this.roomStatusMap.has(roomId)){
-            throw new MyError(ErrorEnum.RoomNotExist)
-        }
-        return this.roomStatusMap.get(roomId)!.userIdSetIng
+  getRoomUserSetIng(roomId: string) {
+    if (!this.roomStatusMap.has(roomId)) {
+      throw new MyError(ErrorEnum.RoomNotExist);
     }
-    getRoomUserList(roomId:string){
-        if(!this.roomStatusMap.has(roomId)){
-            throw new MyError(ErrorEnum.RoomNotExist)
-        }
-        const userList:{username:string,name:string}[]=[];
-        this.roomStatusMap.get(roomId)!.userIdSetIng.forEach((userId)=>{
-            const username=userStatusManager.getUserName(userId)
-            const name=userStatusManager.getName(userId)
-            userList.push({username,name})
-        })
-        return userList
+    return this.roomStatusMap.get(roomId)!.userIdSetIng;
+  }
+  getUserJoinRoomList(userId: string) {
+    const list: {roomName:string,roomId:string}[] = [];
+    this.roomStatusMap.forEach((roomStatus, key) => {
+      if (roomStatus.userIdSetJoin.has(userId) || roomStatus.roomOwner===userId) {
+        list.push({roomName:roomStatus.roomName,roomId:roomStatus.roomId})
+      }
+    });
+    return list;
+  }
+  getRoomUserListIng(roomId: string) {
+    if (!this.roomStatusMap.has(roomId)) {
+      throw new MyError(ErrorEnum.RoomNotExist);
     }
+    const userList: { username: string; name: string }[] = [];
+    this.roomStatusMap.get(roomId)!.userIdSetIng.forEach((userId) => {
+      const username = userStatusManager.getUserName(userId);
+      const name = userStatusManager.getName(userId);
+      userList.push({ username, name });
+    });
+    return userList;
+  }
 
-    getRoomOwner(roomId:string){
-        if(!this.roomStatusMap.has(roomId)){
-            throw new MyError(ErrorEnum.RoomNotExist)
-        }
-        return this.roomStatusMap.get(roomId)!.getRoomOwner()
+  getRoomOwner(roomId: string) {
+    if (!this.roomStatusMap.has(roomId)) {
+      throw new MyError(ErrorEnum.RoomNotExist);
     }
+    return this.roomStatusMap.get(roomId)!.getRoomOwner();
+  }
 
-    isRoomOwner(userId:string){
-        for (const roomStatus of this.roomStatusMap.values()) {
-            if (roomStatus.roomOwner === userId) {
-                return true;
-            }
-        }  
+  isRoomOwner(userId: string) {
+    for (const roomStatus of this.roomStatusMap.values()) {
+      if (roomStatus.roomOwner === userId) {
+        return true;
+      }
     }
+  }
 }
 
-export const roomStatusManager=new RoomStatusManager();
+export const roomStatusManager = new RoomStatusManager();

@@ -4,7 +4,6 @@ import path from 'path';
 import meetRoomRecordDao from '../dao/meetRoomRecordDao';
 import meetSpeechDao from '../dao/MeetSpeechDao';
 import { userDao } from '../dao/userDao';
-type PieChart=Array<{ value:number; userId: string }>
 
 class MeetSummaryUtil{
     meetSummaryWorker!:Worker

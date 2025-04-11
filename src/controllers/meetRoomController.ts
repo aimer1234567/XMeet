@@ -60,6 +60,11 @@ export default class MeetRoomController {
       next(err)
     }
   }
+  getRecentMeeting(req: Request, res: Response){
+    const userId = req.headers["userId"] as string;
+    const result=this.meetRoomService.getRecentMeeting(userId)
+    return res.json(result)
+  }
 
   async getMeetRoomSummary(req: Request, res: Response, next: NextFunction){
     const userId = req.headers["userId"] as string;

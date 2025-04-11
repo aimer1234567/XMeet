@@ -17,7 +17,11 @@ const getLocalIp = () => {
 }
 
 export default {
-    jwt:"dswdwqdqd",
+    log:{
+      level:"debug",
+      file:"logs/xmeet.log"
+    },
+    jwt:"dswdwqdqdqwdsqwdqd",
     mailUtils: {
         host:"gz-smtp.qcloudmail.com",
         port:465,

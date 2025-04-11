@@ -10,7 +10,7 @@ class UserStatus {
   public name: string;
   public lang:"zh"| "en";
   public webSocket: Socket;
-  public isRoomId: boolean = false;
+  public hasRoom: boolean = false;
   public roomId?: string;
   public currentUserSubtitle?:string;
   public constructor(userId: string, webSocket: Socket,session:string,userName:string,name:string,lang:"zh"| "en") {
@@ -23,13 +23,13 @@ class UserStatus {
   }
   public setRoomId(roomId: string) {
     this.roomId = roomId;
-    this.isRoomId = true;
+    this.hasRoom = true;
   }
   public getRoomId() {
     return this.roomId;
   }
   public getIsRoom() {
-    return this.isRoomId;
+    return this.hasRoom;
   }
 }
 class UserStatusManager {
@@ -55,16 +55,16 @@ class UserStatusManager {
     if (!this.userStatusMap.has(userId)) {
       return false;
     }
-    return this.userStatusMap.get(userId)!.isRoomId;
+    return this.userStatusMap.get(userId)!.hasRoom;
   }
   public setUserRoomId(userId: string, roomId: string) {
     const userStatus = this.getUserStatus(userId);
-    userStatus.isRoomId = true;
+    userStatus.hasRoom = true;
     userStatus.roomId = roomId;
   }
   public getUserRoomId(userId: string): string {
     const userStatus = this.getUserStatus(userId);
-    if (!userStatus.isRoomId) {
+    if (!userStatus.hasRoom) {
       throw new MyError(ErrorEnum.UserNotInRoom);
     }
     return userStatus.roomId as string;
@@ -77,7 +77,7 @@ class UserStatusManager {
 
   public deleteUserRoomId(userId: string) {
     const userStatus = this.getUserStatus(userId);
-    userStatus.isRoomId = false;
+    userStatus.hasRoom = false;
   }
   public getUserSession(userId: string) {
     const userStatus = this.getUserStatus(userId);

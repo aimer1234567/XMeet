@@ -16,14 +16,14 @@ import { roomStatusManager } from "./roomStatusManager";
 export default class meetRoomService {
   meetRoomDao = meetRoomDao;
   userDao: UserDao = userDao;
-  meetRoomRecordDao=meetRoomRecordDao;
+  meetRoomRecordDao = meetRoomRecordDao;
 
-  // 
+  //
   async createMeetRoomInstant(userId: string, data: CreateMeetRoomInstantReq) {
     if (userStatusManager.userHasRoom(userId)) {
       throw new MyError(ErrorEnum.UserInRoom);
     }
-    if (roomStatusManager.isRoomOwner(userId)){
+    if (roomStatusManager.isRoomOwner(userId)) {
       throw new MyError(ErrorEnum.UserIsRoomOwner);
     }
     const meetRoom = plainToInstance(MeetRoom, {});
@@ -56,7 +56,8 @@ export default class meetRoomService {
       throw new MyError(ErrorEnum.UserInRoom);
     }
     const meetRoom = await this.meetRoomDao.getMeetRoomById(meetRoomId);
-    if (!meetRoom || meetRoom.isOver) {  //判断房间是否存在或者关闭
+    if (!meetRoom || meetRoom.isOver) {
+      //判断房间是否存在或者关闭
       throw new MyError(ErrorEnum.RoomNotExist);
     }
     return Result.succuss({
@@ -73,28 +74,35 @@ export default class meetRoomService {
   }
 
   async getMeetRoomRecord(userId: string, data: QueryMeetRoomRecordReq) {
-    const  params={
-      userId:userId,
-      name:data.meetRoomName,
+    const params = {
+      userId: userId,
+      name: data.meetRoomName,
       startTimeStart: data.startTime,
       startTimeEnd: data.endTime,
       page: data.page, // 当前页码
-      pageSize:data.pageSize // 每页大小
-    }
-    const queryResult= await this.meetRoomRecordDao.queryMeetRecords(params);
-    return Result.succuss(queryResult)
+      pageSize: data.pageSize, // 每页大小
+    };
+    const queryResult = await this.meetRoomRecordDao.queryMeetRecords(params);
+    return Result.succuss(queryResult);
   }
 
-  async getMeetRoomSummary(userId: string,roomId: string) {
+  getRecentMeeting(userId: string) {
+    const userJoinRoomList=roomStatusManager.getUserJoinRoomList(userId)
+    return Result.succuss({userJoinRoomList}) //返回的列表可能是空的
+  }
+
+  async getMeetRoomSummary(userId: string, roomId: string) {
     // TODO: 检查用户是否有权限
-    const meetRoomRecord=await this.meetRoomRecordDao.queryMeetRecordById(roomId)
-    const durationPieChart=meetRoomRecord!.durationPieChart
-    const chatHeatMap=meetRoomRecord!.chatHeatMap
-    const wordCloud=meetRoomRecord!.wordCloud
+    const meetRoomRecord = await this.meetRoomRecordDao.queryMeetRecordById(
+      roomId
+    );
+    const durationPieChart = meetRoomRecord!.durationPieChart;
+    const chatHeatMap = meetRoomRecord!.chatHeatMap;
+    const wordCloud = meetRoomRecord!.wordCloud;
     return Result.succuss({
       durationPieChart,
       chatHeatMap,
-      wordCloud
-    })
+      wordCloud,
+    });
   }
 }
