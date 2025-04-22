@@ -77,8 +77,10 @@ class MediaService {
       }
       webSocketServer.send(otherUserId, "newPeer", { username, name });
     });
+    const roomOwner = roomStatusManager.getRoomOwner(roomId);
+    const isRoomOwner = roomOwner === userId;
     logger.info("join room", { roomId, userId });
-    return Result.succuss();
+    return Result.succuss({isRoomOwner});
   }
   /**
    * 返回客户端的rtp参数
@@ -288,6 +290,9 @@ class MediaService {
   }
   closeRoom(userId: string) {
     const roomId = this.userStatusManager.getUserRoomId(userId);
+    if(roomStatusManager.getRoomOwner(roomId)!==userId){
+      throw new MyError(ErrorEnum.NoPermission)
+    }
     roomStatusManager.getRoomUserSetIng(roomId).forEach((userId) => {
       //广播给房间中的用户，当前房间关闭
       webSocketServer.send(userId, "roomClose", null);
@@ -297,11 +302,19 @@ class MediaService {
     this.roomList.get(roomId)!.closeRoom();
     return Result.succuss();
   }
-  isRoomOwner(userId: string) {
+
+  async transferOwnership(userId: string,roomOwnerUsername:string){
     const roomId = this.userStatusManager.getUserRoomId(userId);
-    const roomOwner = roomStatusManager.getRoomOwner(roomId);
-    const isRoomOwner = roomOwner === userId;
-    return Result.succuss({ isRoomOwner });
+    if(roomStatusManager.getRoomOwner(roomId)!==userId){
+      throw new MyError(ErrorEnum.NoPermission)
+    }
+    const user=await userDao.selectByUsername(roomOwnerUsername)
+    if(userId===user.id){
+      return Result.error("不能将会议所有权转让给自己")
+    }
+    roomStatusManager.transferOwnership(user.id,roomId)
+    webSocketServer.send(user.id,"newRoomOwner",null)
+    return Result.succuss()
   }
 
   async getRouterStatus(userId: string) {

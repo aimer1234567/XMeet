@@ -37,6 +37,16 @@ class RoomStatus {
   getRoomOwner() {
     return this.roomOwner;
   }
+  hasUserIng(userId: string) {
+    if(this.userIdSetIng.has(userId)){
+      return true
+    }else{
+      return false
+    }
+  }
+  setRoomOwner(userId: string) {
+    this.roomOwner = userId;
+  }
 }
 /**
  * 房间状态管理
@@ -134,6 +144,16 @@ class RoomStatusManager {
         return true;
       }
     }
+  }
+  transferOwnership(roomOwnerId: string, roomId: string){
+    if (!this.roomStatusMap.has(roomId)) {
+      throw new MyError(ErrorEnum.RoomNotExist);
+    }
+    const roomStatus=roomStatusManager.roomStatusMap.get(roomId)!
+    if(!roomStatus.hasUserIng(roomOwnerId)){
+      throw new MyError(ErrorEnum.UserNotInRoom)
+    }
+    roomStatus.setRoomOwner(roomOwnerId)
   }
 }
 

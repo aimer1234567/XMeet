@@ -12,10 +12,10 @@ router.post('/getProducers',(req,res)=>mediaController.getProducers(req,res))
 router.post('/consume',(req,res,next)=>mediaController.consume(req,res,next))
 router.post('/closeProducer',(req,res)=>mediaController.closeProducer(req,res))
 router.get('/peerExec',(req,res)=>mediaController.peerExec(req,res))
-router.post('/isRoomOwner',(req,res)=>mediaController.isRoomOwner(req,res))
 router.get('/closeRoom',(req,res)=>mediaController.closeRoom(req,res))
 router.get('/getStatus',(req,res)=>mediaController.getStatus(req,res))
 router.get('/getRouterStatus',(req,res,next)=>mediaController.getRouterStatus(req,res,next))
+router.post('/transferOwnership',(req,res,next)=>mediaController.transferOwnership(req,res,next))
 export default router;
 
 

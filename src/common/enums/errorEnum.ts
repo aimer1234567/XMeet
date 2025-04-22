@@ -8,5 +8,6 @@ export enum ErrorEnum{
     WebSocketServerNotInit="websocket服务没有初始化",
     UserInRoom="用户已加入会议",
     UserNotInRoom="用户不在会议中",
-    UserIsRoomOwner="用户当前已经创建了会议"
+    UserIsRoomOwner="用户当前已经创建了会议",
+    NoPermission="没有权限"
 } 

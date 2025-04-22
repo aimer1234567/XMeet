@@ -23,7 +23,7 @@ export default class Room {
     this.peers.set(peer.peerId, peer);
   }
   getProducerUserMapForPeer(userId: string) {
-    let producerUserMap = new Array<{producerId:string,user:{username:string,name:string}}>();
+    let producerUserArray = new Array<{producerId:string,user:{username:string,name:string}}>();
     //获取这个房间的所有用户
     this.peers.forEach((peer) => {
       //获取用户的所有生产者·
@@ -33,10 +33,10 @@ export default class Room {
       peer.producers.forEach((producer) => {
         const userName=userStatusManager.getUserName(peer.peerId)
         const name=userStatusManager.getUserName(peer.peerId)
-        producerUserMap.push({producerId:producer.id,user:{username:userName,name:name}})
+        producerUserArray.push({producerId:producer.id,user:{username:userName,name:name}})
       });
     });
-    return producerUserMap;
+    return producerUserArray;
   }
   
 

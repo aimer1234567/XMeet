@@ -4,7 +4,11 @@ import User from "../models/entity/user";
 export class UserDao {
   private userRepository = AppDataSource.getRepository(User);
   async selectByUsername(username: string) {
-    return await this.userRepository.findOneBy({ userName: username });
+    const user=await this.userRepository.findOneBy({ userName: username });
+    if (!user) {
+      throw new MyError(`User with id ${username} not found`);
+    }
+    return user;
   }
   async selectById(id: string){
     const user= await this.userRepository.findOneBy({ id: id });

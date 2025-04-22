@@ -31,8 +31,8 @@ export default class meetRoomService {
     meetRoom.startTime = new Date();
     meetRoom.durationMinutes = 90;
     meetRoom.isOver = false;
-    const { name } = await this.userDao.selectById(userId);
     if (!data.name) {
+      const { name } = await this.userDao.selectById(userId);
       meetRoom.name = `${name}的临时会议`;
     } else {
       meetRoom.name = data.name;

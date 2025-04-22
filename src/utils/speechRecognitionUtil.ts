@@ -70,7 +70,7 @@ export class SpeechRecognition {
       const srcLang = userStatusManager.getUserLang(userId);
       const name = userStatusManager.getName(userId);
       try {
-        const result = await axios.post("http://127.0.0.1:8001/translate", {
+        const result = await axios.post("http://127.0.0.1:9090/translate", {
           text,
           lang: srcLang,
         });

@@ -64,4 +64,4 @@ async def root(translationRequest: TranslationRequest):
 if __name__ == "__main__":
     import uvicorn
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=9090)

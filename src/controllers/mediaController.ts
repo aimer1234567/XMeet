@@ -94,11 +94,6 @@ export default class MediaController {
         const userId=req.headers['userId'] as string
         return res.json(this.mediaService.peerExec(userId))
     }
-
-    isRoomOwner(req: Request, res: Response) {
-        const userId=req.headers['userId'] as string
-        return res.json(this.mediaService.isRoomOwner(userId))
-    }
     closeRoom(req: Request, res: Response){
         const userId=req.headers['userId'] as string
         return res.json(this.mediaService.closeRoom(userId))
@@ -107,6 +102,17 @@ export default class MediaController {
         const userId=req.headers['userId'] as string
         try{
             return res.json(await this.mediaService.getRouterStatus(userId))
+        }catch(err){
+            next(err)
+        }
+    }
+
+    async transferOwnership(req: Request, res: Response,next:NextFunction){
+        const userId=req.headers['userId'] as string
+        try{
+            const roomOwnerUsername=req.body.username
+            const result=await this.mediaService.transferOwnership(userId,roomOwnerUsername)
+            return res.json(result) 
         }catch(err){
             next(err)
         }
