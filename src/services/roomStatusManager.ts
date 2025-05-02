@@ -11,14 +11,16 @@ class RoomStatus {
   roomId: string;
   roomOwner: string;
   roomName: string;
+  isInstant: boolean
   userIdSetIng = new Set<string>();
   userIdSetJoin = new Set<string>();
   startTime: Date;
-  constructor(roomId: string, roomOwner: string, startTime: Date,roomName:string ) {
+  constructor(roomId: string, roomOwner: string, startTime: Date,roomName:string,isInstant:boolean ) {
     this.roomId = roomId;
     this.roomOwner = roomOwner;
     this.startTime = startTime;
     this.roomName = roomName;
+    this.isInstant= isInstant;
   }
   addUserByUserId(userId: string) {
     if (!this.userIdSetIng.has(userId)) {
@@ -58,7 +60,7 @@ class RoomStatusManager {
       throw new MyError(ErrorEnum.RoomIsExist);
     }
     const meetRoom=await meetRoomDao.getMeetRoomById(roomId)
-    const roomStatus = new RoomStatus(roomId, userId, new Date(),meetRoom.name);
+    const roomStatus = new RoomStatus(roomId, userId, new Date(),meetRoom.name,meetRoom.isInstant);
     this.roomStatusMap.set(roomId, roomStatus);
   }
   async closeRoomStatus(roomId: string) {
@@ -138,9 +140,9 @@ class RoomStatusManager {
     return this.roomStatusMap.get(roomId)!.getRoomOwner();
   }
 
-  isRoomOwner(userId: string) {
+  isInstantRoomOwner(userId: string) {
     for (const roomStatus of this.roomStatusMap.values()) {
-      if (roomStatus.roomOwner === userId) {
+      if (roomStatus.roomOwner === userId && roomStatus.isInstant===true) {
         return true;
       }
     }

@@ -22,6 +22,7 @@ export default class UserService {
     } catch (err) {
       throw err;
     }
+    return Result.succuss();
   }
   // TODO: 优化，防止多次注册，防止邮箱重复，账号重复要反馈错误
   async register(userRegisterReq: UserRegisterReq) {

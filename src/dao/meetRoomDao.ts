@@ -1,4 +1,5 @@
 import AppDataSource from "../common/config/database";
+import { ErrorEnum } from "../common/enums/errorEnum";
 import MyError from "../common/myError";
 import MeetRoom from "../models/entity/meetRoom";
 import { QueryFailedError } from "typeorm";
@@ -22,9 +23,8 @@ class MeetRoomDao {
     try{
       meetRoom=await this.meetRoomRepository.findOneBy({id:id})
     }catch(err){
-      if(err instanceof QueryFailedError){
-          throw new MyError(err.message)
-      }
+      console.log(err);
+      throw new MyError(ErrorEnum.SQLError);
     }
     return meetRoom!
   }
@@ -41,10 +41,40 @@ class MeetRoomDao {
           .execute();
         return result;
       } catch (err) {
-        if (err instanceof QueryFailedError) {
-          console.log(err.driverError);
-          throw new MyError(err.message);
-        }
+        console.log(err);
+        throw new MyError(ErrorEnum.SQLError);
+      }
+    }
+
+    async getAppointMeetNumber(creatorId:string) {
+      try {
+        const count = await this.meetRoomRepository.count({
+          where: {
+            creatorId,
+            isInstant: false,
+            isOver: false
+          }
+        });
+        return count;
+      } catch (err) {
+        console.log(err);
+        throw new MyError(ErrorEnum.SQLError);
+      }
+    }
+
+    async getAppointMeets(creatorId: string) {
+      try {
+        const count = await this.meetRoomRepository.find({
+          where: {
+            creatorId,
+            isInstant: false,
+            isOver: false
+          }
+        });
+        return count;
+      } catch (err) {
+        console.log(err);
+        throw new MyError(ErrorEnum.SQLError);
       }
     }
 }

@@ -13,17 +13,17 @@ import { ErrorEnum } from "../common/enums/errorEnum";
 import MyError from "../common/myError";
 import meetRoomRecordDao from "../dao/meetRoomRecordDao";
 import { roomStatusManager } from "./roomStatusManager";
-export default class meetRoomService {
+import config from "../common/config/config";
+export default class MeetRoomService {
   meetRoomDao = meetRoomDao;
   userDao: UserDao = userDao;
   meetRoomRecordDao = meetRoomRecordDao;
-
   //
   async createMeetRoomInstant(userId: string, data: CreateMeetRoomInstantReq) {
     if (userStatusManager.userHasRoom(userId)) {
       throw new MyError(ErrorEnum.UserInRoom);
     }
-    if (roomStatusManager.isRoomOwner(userId)) {
+    if (roomStatusManager.isInstantRoomOwner(userId)) {
       throw new MyError(ErrorEnum.UserIsRoomOwner);
     }
     const meetRoom = plainToInstance(MeetRoom, {});
@@ -37,7 +37,6 @@ export default class meetRoomService {
     } else {
       meetRoom.name = data.name;
     }
-    meetRoom.inviteOnly = false;
     meetRoom.isInstant = true;
     if (!data.password) {
       meetRoom.isPassword = false;
@@ -62,15 +61,33 @@ export default class meetRoomService {
     }
     return Result.succuss({
       isPassword: meetRoom.isPassword,
-      inviteOnly: meetRoom.inviteOnly,
     });
   }
 
-  async createMeetRoom(userId: string, data: CreateMeetRoomReq) {
+  async createAppointMeet(userId: string, data: CreateMeetRoomReq) {
+    const appointMeetNumber=await meetRoomDao.getAppointMeetNumber(userId)
+    if(appointMeetNumber>=config.meetServer.maxAppointMeetNumber){ //判断预约会议数量有没有超过限制
+      throw new MyError(ErrorEnum.AppointMeetNumberLimit)
+    }
     const meetRoom = plainToInstance(MeetRoom, data);
+    if(!meetRoom.password){
+      meetRoom.isPassword=false;
+    }else{
+      meetRoom.isPassword=true;
+    }
+    if(!meetRoom.remark){
+      meetRoom.remark="";
+    }
+    meetRoom.isOver=false
+    meetRoom.isInstant=false;
     meetRoom.creatorId = userId;
     const identifiers = await this.meetRoomDao.addMeetRoom(meetRoom);
-    return Result.succuss({ roomId: identifiers![0].id });
+    return Result.succuss({ meetRoomId: identifiers![0].id });
+  }
+
+  async getAppointMeets(userId: string){
+    const appointMeets=await meetRoomDao.getAppointMeets(userId);
+    return Result.succuss({appointMeets});
   }
 
   async getMeetRoomRecord(userId: string, data: QueryMeetRoomRecordReq) {

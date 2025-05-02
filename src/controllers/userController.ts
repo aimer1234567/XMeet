@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import Result from "../common/result";
 import UserService from "../services/userService";
 import {UserRegisterReq,LoginReq} from "../models/req/userReq";
-import { channel } from "diagnostics_channel";
 export default class UserController {
   userService: UserService = new UserService();
   async getMailCaptcha(req: Request, res: Response, next: NextFunction) {

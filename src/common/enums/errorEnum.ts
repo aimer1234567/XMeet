@@ -9,5 +9,7 @@ export enum ErrorEnum{
     UserInRoom="用户已加入会议",
     UserNotInRoom="用户不在会议中",
     UserIsRoomOwner="用户当前已经创建了会议",
-    NoPermission="没有权限"
+    NoPermission="没有权限",
+    SQLError="数据库错误",
+    AppointMeetNumberLimit="预约会议数量已达上限",
 } 

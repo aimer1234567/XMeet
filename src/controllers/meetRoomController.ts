@@ -39,11 +39,21 @@ export default class MeetRoomController {
     }
   }
 
-  async createMeetRoom(req: Request, res: Response, next: NextFunction) {
+  async createAppointMeet(req: Request, res: Response, next: NextFunction) {
     const userId = req.headers["userId"] as string;
     const data = plainToInstance(CreateMeetRoomReq, req.body as object);
     try {
-      const result = await this.meetRoomService.createMeetRoom(userId, data);
+      const result = await this.meetRoomService.createAppointMeet(userId, data);
+      return res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getAppointMeets(req: Request, res: Response, next: NextFunction) {
+    const userId = req.headers["userId"] as string;
+    try {
+      const result = await this.meetRoomService.getAppointMeets(userId);
       return res.json(result);
     } catch (err) {
       next(err);

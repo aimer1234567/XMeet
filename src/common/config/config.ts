@@ -39,6 +39,7 @@ export default {
       maxCloseTime:120, // 会议最大超时时间，单位分钟
       maxPeer:30,// 最大用户数
       maxSpeech:4,// 最大发言数
+      maxAppointMeetNumber:5,
     },
     webServer:{
       isHttps:true,
