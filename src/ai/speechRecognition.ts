@@ -8,7 +8,7 @@ import { roomStatusManager } from "../services/roomStatusManager";
 import userStatusManager from "../services/userStatusManager";
 import meetSpeechDao from "../dao/MeetSpeechDao";
 import MeetSpeech from "../models/entity/MeetSpeech";
-import { WorkerTaskQueue } from "./workerTaskQueue";
+import { WorkerTaskQueue } from "../utils/workerTaskQueue";
 class AudioStream extends Readable {
   chunks: Buffer[];
   reading: boolean;
@@ -57,7 +57,7 @@ export class SpeechRecognition {
     if (this.recWorker) {
       this.recWorker.terminate();
     }
-    this.recWorker = new Worker(path.join(__dirname, "./recWork.js"));
+    this.recWorker = new Worker(path.join(__dirname, "./speechRecognitionWork.js"));
     this.rceTaskQueue.setWorker(this.recWorker);
     this.recWorker.on("message", async ({ userId, text }) => {
       this.rceTaskQueue.handleNextTaskDone();

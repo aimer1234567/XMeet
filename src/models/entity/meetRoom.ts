@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn } from "typeorm"
+import { LessThanOrEqual } from "typeorm";
 @Entity({name:'meet'})
 class MeetRoom{
     @PrimaryGeneratedColumn("uuid")
@@ -21,7 +22,9 @@ class MeetRoom{
     password:string
     @Column({name:"is_over"})
     isOver:boolean
-    constructor(creatorId:string,startTime:Date,durationMinutes:number,name:string,remark:string,isPassword:boolean,isInstant:boolean,password:string,isOver:boolean) {
+    @Column({name:"is_start"})
+    isStart:boolean
+    constructor(creatorId:string,startTime:Date,durationMinutes:number,name:string,remark:string,isPassword:boolean,isInstant:boolean,password:string,isOver:boolean,isStart:boolean) {
         this.creatorId = creatorId;
         this.startTime = startTime;
         this.durationMinutes = durationMinutes;
@@ -31,6 +34,7 @@ class MeetRoom{
         this.isInstant = isInstant;
         this.password = password;
         this.isOver = isOver;
+        this.isStart= isStart;
     }
 }
 

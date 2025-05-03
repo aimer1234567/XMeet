@@ -5,7 +5,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../common/config/config";
 import MyError from "../common/myError";
 import { ErrorEnum } from "../common/enums/errorEnum";
-import { speechRecognitionUtil } from "../utils/speechRecognitionUtil";
+import { speechRecognitionUtil } from "../ai/speechRecognition";
 import userStatusManager from "../services/userStatusManager";
 import { userDao } from "../dao/userDao";
 import { roomStatusManager } from "../services/roomStatusManager";

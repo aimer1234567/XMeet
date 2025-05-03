@@ -2,7 +2,7 @@ import AppDataSource from "../common/config/database";
 import { ErrorEnum } from "../common/enums/errorEnum";
 import MyError from "../common/myError";
 import MeetRoom from "../models/entity/meetRoom";
-import { QueryFailedError } from "typeorm";
+import { QueryFailedError,LessThanOrEqual } from "typeorm";
 class MeetRoomDao {
   private meetRoomRepository = AppDataSource.getRepository(MeetRoom);
   async addMeetRoom(meetRoom: MeetRoom) {
@@ -64,18 +64,67 @@ class MeetRoomDao {
 
     async getAppointMeets(creatorId: string) {
       try {
-        const count = await this.meetRoomRepository.find({
+        const appointMeets = await this.meetRoomRepository.find({
           where: {
             creatorId,
             isInstant: false,
             isOver: false
           }
         });
-        return count;
+        return appointMeets;
       } catch (err) {
         console.log(err);
         throw new MyError(ErrorEnum.SQLError);
       }
+    }
+
+    async getAllAppointMeets() {
+      try {
+        const appointMeets=await this.meetRoomRepository.find({
+          where: {
+            isInstant: false,
+            isOver: false,
+            isStart:false,
+            startTime: LessThanOrEqual(new Date()),
+          }
+        });
+        return appointMeets;
+      } catch (err) {
+        console.log(err);
+        throw new MyError(ErrorEnum.SQLError);
+      }
+    }
+    async getAllNotOverMeets() {
+      try {
+        const meetings = await this.meetRoomRepository
+          .createQueryBuilder('meet')
+          .where('meet.is_start = :isStart', { isStart: 1 })
+          .andWhere('meet.is_over = :isOver', { isOver: 0 })
+          .andWhere('DATE_ADD(meet.start_time, INTERVAL meet.duration_minutes MINUTE) <= NOW()')
+          .getMany(); // 使用 getMany 获取实体对象
+    
+        return meetings;
+      } catch (err) {
+        console.error('Error querying meetings that should be over:', err);
+        throw new MyError(ErrorEnum.SQLError);
+      }
+    }
+    async updateIsStarted(ids: string[]){
+      await this.meetRoomRepository
+      .createQueryBuilder()
+      .update(MeetRoom) // 表名或实体类名都可以
+      .set({ isStart: true })
+      .whereInIds(ids)
+      .execute();
+    }
+    
+    async updateListIsOver(ids: string[]) {
+      await this.meetRoomRepository
+      .createQueryBuilder()
+      .update(MeetRoom) // 表名或实体类名都可以
+      .set({ isOver: true })
+      .whereInIds(ids)
+      .execute();
     }
 }
 export default new MeetRoomDao();

@@ -1,11 +1,11 @@
 import { types } from "mediasoup";
 import { webSocketServer } from "../../webSocket/webSocketServer";
-import {speechRecognitionUtil} from "../../utils/speechRecognitionUtil";
+import { speechRecognitionUtil } from "../../ai/speechRecognition";
 import { logger } from "../../common/logger";
 export default class Peer {
-  speechRecognition=speechRecognitionUtil
+  speechRecognition = speechRecognitionUtil;
   producers = new Map<string, types.Producer>();
-  producerLabel =new Map<types.MediaKind,string>();
+  producerLabel = new Map<types.MediaKind, string>();
   consumers = new Map<string, types.Consumer>();
   transports = new Map<string, types.Transport>();
   constructor(public peerId: string) {}
@@ -19,8 +19,8 @@ export default class Peer {
 
   async connectTransport(transportId: string, dtlsParameters: unknown) {
     if (!this.transports.has(transportId)) {
-      logger.debug(`transport not found`,{transportId});
-      return
+      logger.debug(`transport not found`, { transportId });
+      return;
     }
     await this.transports.get(transportId)!.connect({
       dtlsParameters: dtlsParameters,
@@ -38,20 +38,20 @@ export default class Peer {
         kind,
         rtpParameters,
       });
-      console.error("生产者id",producer.id)
+    console.error("生产者id", producer.id);
     this.producers.set(producer.id, producer);
-    this.producerLabel.set(kind,producer.id)
+    this.producerLabel.set(kind, producer.id);
     producer.on("transportclose", () => {
       console.log("生产者通道关闭", {
         name: `${this.peerId}`,
         consumer_id: `${producer.id}`,
       });
-      if(kind=="audio"){
+      if (kind == "audio") {
         this.speechRecognition.closeRecognizer(this.peerId); // 关闭语音识别
       }
       producer.close();
       this.producers.delete(producer.id);
-      this.producerLabel.delete(kind)
+      this.producerLabel.delete(kind);
     });
     return producer;
   }
@@ -82,11 +82,12 @@ export default class Peer {
       this.consumers.delete(consumer.id);
     });
     consumer.on("producerclose", () => {
-      this.consumers.get(consumer.id)!.close()
+      this.consumers.get(consumer.id)!.close();
       this.consumers.delete(consumer.id);
-      webSocketServer.send(userId,"consumerClosed",{
-        consumerId: consumer.id,kind:consumer.kind
-      })
+      webSocketServer.send(userId, "consumerClosed", {
+        consumerId: consumer.id,
+        kind: consumer.kind,
+      });
       // TODO:  通过ws,告诉客户端删除该消费者
     });
     return {
@@ -101,18 +102,18 @@ export default class Peer {
       },
     };
   }
-  closeProducer(producerId:string){
-    try{
+  closeProducer(producerId: string) {
+    try {
       this.producers.get(producerId)!.close();
       this.producers.delete(producerId);
-    }catch(e){
-      console.error(e)
+    } catch (e) {
+      console.error(e);
     }
   }
 
-  close(){
-    this.transports.forEach((transport)=>{
-      transport.close()
-    })
+  close() {
+    this.transports.forEach((transport) => {
+      transport.close();
+    });
   }
 }

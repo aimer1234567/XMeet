@@ -31,6 +31,7 @@ export default class MeetRoomService {
     meetRoom.startTime = new Date();
     meetRoom.durationMinutes = 90;
     meetRoom.isOver = false;
+    meetRoom.isStart = true;
     if (!data.name) {
       const { name } = await this.userDao.selectById(userId);
       meetRoom.name = `${name}的临时会议`;
@@ -65,29 +66,31 @@ export default class MeetRoomService {
   }
 
   async createAppointMeet(userId: string, data: CreateMeetRoomReq) {
-    const appointMeetNumber=await meetRoomDao.getAppointMeetNumber(userId)
-    if(appointMeetNumber>=config.meetServer.maxAppointMeetNumber){ //判断预约会议数量有没有超过限制
-      throw new MyError(ErrorEnum.AppointMeetNumberLimit)
+    const appointMeetNumber = await meetRoomDao.getAppointMeetNumber(userId);
+    if (appointMeetNumber >= config.meetServer.maxAppointMeetNumber) {
+      //判断预约会议数量有没有超过限制
+      throw new MyError(ErrorEnum.AppointMeetNumberLimit);
     }
     const meetRoom = plainToInstance(MeetRoom, data);
-    if(!meetRoom.password){
-      meetRoom.isPassword=false;
-    }else{
-      meetRoom.isPassword=true;
+    if (!meetRoom.password) {
+      meetRoom.isPassword = false;
+    } else {
+      meetRoom.isPassword = true;
     }
-    if(!meetRoom.remark){
-      meetRoom.remark="";
+    if (!meetRoom.remark) {
+      meetRoom.remark = "";
     }
-    meetRoom.isOver=false
-    meetRoom.isInstant=false;
+    meetRoom.isOver = false;
+    meetRoom.isInstant = false;
+    meetRoom.isStart = false;
     meetRoom.creatorId = userId;
     const identifiers = await this.meetRoomDao.addMeetRoom(meetRoom);
     return Result.succuss({ meetRoomId: identifiers![0].id });
   }
 
-  async getAppointMeets(userId: string){
-    const appointMeets=await meetRoomDao.getAppointMeets(userId);
-    return Result.succuss({appointMeets});
+  async getAppointMeets(userId: string) {
+    const appointMeets = await meetRoomDao.getAppointMeets(userId);
+    return Result.succuss({ appointMeets });
   }
 
   async getMeetRoomRecord(userId: string, data: QueryMeetRoomRecordReq) {
@@ -104,8 +107,8 @@ export default class MeetRoomService {
   }
 
   getRecentMeeting(userId: string) {
-    const userJoinRoomList=roomStatusManager.getUserJoinRoomList(userId)
-    return Result.succuss({userJoinRoomList}) //返回的列表可能是空的
+    const userJoinRoomList = roomStatusManager.getUserJoinRoomList(userId);
+    return Result.succuss({ userJoinRoomList }); //返回的列表可能是空的
   }
 
   async getMeetRoomSummary(userId: string, roomId: string) {

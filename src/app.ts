@@ -12,7 +12,7 @@ import cors from "cors";
 import fs from "fs";
 import config from "./common/config/config";
 import initTranslationProcess from "./utils/initTranslationProcess";
-import path from 'path'
+import path from "path";
 
 async function initApp() {
   // const voskLibPath = path.resolve(__dirname, "../../node_modules/vosk/lib/win-x86_64");
@@ -26,15 +26,15 @@ async function initApp() {
     .catch((err) => {
       console.error("数据库初始化失败", err);
     });
-  await import("./utils/speechRecognitionUtil").then( ({ speechRecognitionUtil })=> {
+  await import("./ai/speechRecognition").then(({ speechRecognitionUtil }) => {
     speechRecognitionUtil.initTranslationService(); //初始化语音识别，加载语音识别模型
-})
+  });
   await import("./services/mediaService").then(async ({ mediaService }) => {
     await mediaService.init(); //初始化mediasoup工作线程
-  })
-  const meetSummaryUtil=(await import("./utils/meetSummaryUtil")).default
-  meetSummaryUtil.initMeetSummaryService();  //初始化会议总结服务
-  const {webSocketServer}=await import("./webSocket/webSocketServer")
+  });
+  const meetSummaryUtil = (await import("./ai/meetSummary")).default;
+  meetSummaryUtil.initMeetSummaryService(); //初始化会议总结服务
+  const { webSocketServer } = await import("./webSocket/webSocketServer");
   const options = {
     key: fs.readFileSync(config.webServer.https.key, "utf-8"),
     cert: fs.readFileSync(config.webServer.https.cert, "utf-8"),
@@ -54,9 +54,9 @@ async function initApp() {
   app.use(cors());
   app.use(express.json());
   app.use(verifyHandler);
-  await import('./routes/userRouter').then((userRouter)=>{
+  await import("./routes/userRouter").then((userRouter) => {
     app.use("/user", userRouter.default);
-  })
+  });
   await import("./routes/mediaRouter").then((mediaRouter) => {
     app.use("/media", mediaRouter.default);
   });

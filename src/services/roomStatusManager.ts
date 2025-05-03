@@ -5,22 +5,28 @@ import meetRoomRecordDao from "../dao/meetRoomRecordDao";
 import meetRoomDao from "../dao/meetRoomDao";
 import MeetRoomRecord from "../models/entity/meetRoomRecord";
 import dayjs from "dayjs";
-import meetSummaryUtil from "../utils/meetSummaryUtil";
+import meetSummaryUtil from "../ai/meetSummary";
 import meetUserDao from "../dao/meetUserDao";
 class RoomStatus {
   roomId: string;
   roomOwner: string;
   roomName: string;
-  isInstant: boolean
+  isInstant: boolean;
   userIdSetIng = new Set<string>();
   userIdSetJoin = new Set<string>();
   startTime: Date;
-  constructor(roomId: string, roomOwner: string, startTime: Date,roomName:string,isInstant:boolean ) {
+  constructor(
+    roomId: string,
+    roomOwner: string,
+    startTime: Date,
+    roomName: string,
+    isInstant: boolean
+  ) {
     this.roomId = roomId;
     this.roomOwner = roomOwner;
     this.startTime = startTime;
     this.roomName = roomName;
-    this.isInstant= isInstant;
+    this.isInstant = isInstant;
   }
   addUserByUserId(userId: string) {
     if (!this.userIdSetIng.has(userId)) {
@@ -40,10 +46,10 @@ class RoomStatus {
     return this.roomOwner;
   }
   hasUserIng(userId: string) {
-    if(this.userIdSetIng.has(userId)){
-      return true
-    }else{
-      return false
+    if (this.userIdSetIng.has(userId)) {
+      return true;
+    } else {
+      return false;
     }
   }
   setRoomOwner(userId: string) {
@@ -59,9 +65,27 @@ class RoomStatusManager {
     if (this.roomStatusMap.has(roomId)) {
       throw new MyError(ErrorEnum.RoomIsExist);
     }
-    const meetRoom=await meetRoomDao.getMeetRoomById(roomId)
-    const roomStatus = new RoomStatus(roomId, userId, new Date(),meetRoom.name,meetRoom.isInstant);
+    const meetRoom = await meetRoomDao.getMeetRoomById(roomId);
+    const roomStatus = new RoomStatus(
+      roomId,
+      userId,
+      new Date(),
+      meetRoom.name,
+      meetRoom.isInstant
+    );
     this.roomStatusMap.set(roomId, roomStatus);
+  }
+  addAppointRoomStatus(userId:string,roomId:string,roomName:string,isInstant:boolean){
+    if (this.roomStatusMap.has(roomId)) {
+      throw new MyError(ErrorEnum.RoomIsExist);
+    }
+    this.roomStatusMap.set(roomId, new RoomStatus(
+      roomId,
+      userId,
+      new Date(),
+      roomName,
+      isInstant
+    ));
   }
   async closeRoomStatus(roomId: string) {
     if (!this.roomStatusMap.has(roomId)) {
@@ -70,13 +94,12 @@ class RoomStatusManager {
     let roomStatus = this.roomStatusMap.get(roomId) as RoomStatus;
     const endTime = dayjs();
     const diffMinute = endTime.diff(dayjs(roomStatus.startTime), "minute");
-    await meetSummaryUtil.summary(roomId);
     //关闭会议状态
     meetRoomDao.updateIsOver(roomId);
     //写入会议记录
     const { name } = await meetRoomDao.getMeetRoomById(roomId);
     meetUserDao.insertUsersToMeet(roomId, [...roomStatus.userIdSetJoin]);
-    meetRoomRecordDao.addMeetRoomRecord(
+    await meetRoomRecordDao.addMeetRoomRecord(
       new MeetRoomRecord(
         roomId,
         roomStatus.startTime,
@@ -85,6 +108,7 @@ class RoomStatusManager {
         roomStatus.roomOwner
       )
     );
+    await meetSummaryUtil.summary(roomId);
     //启动会议总结任务
     this.roomStatusMap.delete(roomId);
   }
@@ -112,10 +136,13 @@ class RoomStatusManager {
     return this.roomStatusMap.get(roomId)!.userIdSetIng;
   }
   getUserJoinRoomList(userId: string) {
-    const list: {roomName:string,roomId:string}[] = [];
+    const list: { roomName: string; roomId: string }[] = [];
     this.roomStatusMap.forEach((roomStatus, key) => {
-      if (roomStatus.userIdSetJoin.has(userId) || roomStatus.roomOwner===userId) {
-        list.push({roomName:roomStatus.roomName,roomId:roomStatus.roomId})
+      if (
+        roomStatus.userIdSetJoin.has(userId) ||
+        roomStatus.roomOwner === userId
+      ) {
+        list.push({ roomName: roomStatus.roomName, roomId: roomStatus.roomId });
       }
     });
     return list;
@@ -142,20 +169,20 @@ class RoomStatusManager {
 
   isInstantRoomOwner(userId: string) {
     for (const roomStatus of this.roomStatusMap.values()) {
-      if (roomStatus.roomOwner === userId && roomStatus.isInstant===true) {
+      if (roomStatus.roomOwner === userId && roomStatus.isInstant === true) {
         return true;
       }
     }
   }
-  transferOwnership(roomOwnerId: string, roomId: string){
+  transferOwnership(roomOwnerId: string, roomId: string) {
     if (!this.roomStatusMap.has(roomId)) {
       throw new MyError(ErrorEnum.RoomNotExist);
     }
-    const roomStatus=roomStatusManager.roomStatusMap.get(roomId)!
-    if(!roomStatus.hasUserIng(roomOwnerId)){
-      throw new MyError(ErrorEnum.UserNotInRoom)
+    const roomStatus = roomStatusManager.roomStatusMap.get(roomId)!;
+    if (!roomStatus.hasUserIng(roomOwnerId)) {
+      throw new MyError(ErrorEnum.UserNotInRoom);
     }
-    roomStatus.setRoomOwner(roomOwnerId)
+    roomStatus.setRoomOwner(roomOwnerId);
   }
 }
 
