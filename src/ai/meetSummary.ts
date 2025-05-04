@@ -17,7 +17,7 @@ class MeetSummaryUtil {
       "message",
       async ({
         meetId,
-        data: { wordCloud, durationPieChartById, chatHeatMap },
+        data: { wordCloud, durationPieChartById, chatHeatMap,intelligentSummary},
       }) => {
         this.workerTaskQueue.handleNextTaskDone();
         const durationPieChart = await Promise.all(
@@ -30,7 +30,8 @@ class MeetSummaryUtil {
           meetId,
           wordCloud,
           durationPieChart,
-          chatHeatMap
+          chatHeatMap,
+          intelligentSummary
         );
       }
     );

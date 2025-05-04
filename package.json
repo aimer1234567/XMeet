@@ -25,6 +25,7 @@
     "node-cache": "^5.1.2",
     "nodejieba": "^3.4.4",
     "nodemailer": "^6.10.0",
+    "openai": "^4.97.0",
     "reflect-metadata": "^0.2.2",
     "socket.io": "^4.8.1",
     "source-map-support": "^0.5.21",

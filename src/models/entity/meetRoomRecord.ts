@@ -16,7 +16,7 @@ class MeetRoomRecord {
   time: number;
   @Column({name:'start_time',type:'datetime'})
   startTime: Date;
-  @Column({name:'summary',type:'text', nullable: true })
+  @Column({name:'summary',type:'json', nullable: true })
   summary?: string;
   @Column({name:'chat_heat_map',type:'json',nullable: true })
   chatHeatMap?: any;

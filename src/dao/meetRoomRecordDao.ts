@@ -60,7 +60,7 @@ class MeetRoomRecordDao {
       }
   }
     // 新增更新 wordCloud 方法
-    async updateSummary(id: string, wordCloud: any,durationPieChart:any,chatHeatMap:any) {
+    async updateSummary(id: string, wordCloud: any,durationPieChart:any,chatHeatMap:any,intelligentSummary:any) {
       const record = await this.meetRoomRecordRepository.findOneBy({ id });
       if (!record) {
         throw new MyError("Record not found");
@@ -69,6 +69,7 @@ class MeetRoomRecordDao {
       record.wordCloud = wordCloud;
       record.durationPieChart=durationPieChart;
       record.chatHeatMap=chatHeatMap;
+      record.summary=intelligentSummary;
       // 保存更新后的记录
       await this.meetRoomRecordRepository.save(record);
       return record;

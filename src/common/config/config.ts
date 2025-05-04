@@ -22,6 +22,10 @@ export default {
       file:"logs/xmeet.log"
     },
     jwt:"dswdwqdqdqwdsqwdqd",
+    openai:{
+      apiKey:"sk-dLTWLPX9DfqPrlGkvQn6tKMXgBUbuJKAfZLMkSNycK373ijh",
+      baseURL:"https://api.moonshot.cn/v1"
+    },
     mailUtils: {
         host:"gz-smtp.qcloudmail.com",
         port:465,
