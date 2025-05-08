@@ -119,10 +119,12 @@ export default class MeetRoomService {
     const durationPieChart = meetRoomRecord!.durationPieChart;
     const chatHeatMap = meetRoomRecord!.chatHeatMap;
     const wordCloud = meetRoomRecord!.wordCloud;
+    const summary = meetRoomRecord!.summary
     return Result.succuss({
       durationPieChart,
       chatHeatMap,
       wordCloud,
+      summary
     });
   }
 }
