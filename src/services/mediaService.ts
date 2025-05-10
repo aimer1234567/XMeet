@@ -192,7 +192,8 @@ class MediaService {
       logger.debug("创建传输通道", { userId });
       return Result.succuss(params);
     } catch (err) {
-      if (err instanceof MyError) {
+      if (err instanceof Error) {
+        logger.error(err.message)
         throw new MyError(err.message);
       }
     }

@@ -1,3 +1,4 @@
+import { PortRange } from 'mediasoup/node/lib/fbs/transport/port-range'
 import os from 'os'
 const ifaces:any = os.networkInterfaces()
 const getLocalIp = () => {
@@ -23,8 +24,9 @@ export default {
     },
     jwt:"dswdwqdqdqwdsqwdqd",
     openai:{
-      apiKey:"sk-dLTWLPX9DfqPrlGkvQn6tKMXgBUbuJKAfZLMkSNycK373ijh",
-      baseURL:"https://api.moonshot.cn/v1"
+      apiKey:"sk-59e86a33b21546d58c3e6bdf81707f38",
+      baseURL:"https://dashscope.aliyuncs.com/compatible-mode/v1",
+      model:"qwen-turbo"
     },
     mailUtils: {
         host:"gz-smtp.qcloudmail.com",
@@ -63,8 +65,8 @@ export default {
         // Worker settings
         numWorkers: Object.keys(os.cpus()).length/2,
         worker: {
-          rtcMinPort: 10000,
-          rtcMaxPort: 10100,
+          rtcMinPort: 50000,
+          rtcMaxPort: 59000,
           logLevel: 'warn',
           logTags: [
             'info',
@@ -104,11 +106,12 @@ export default {
           listenIps: [
             {
               ip: '0.0.0.0',
-              announcedIp: getLocalIp()// replace by public IP address
+              announcedIp: "10.22.92.125"// replace by public IP address
             }
           ],
           maxIncomingBitrate: 1500000,
-          initialAvailableOutgoingBitrate: 1000000
+          initialAvailableOutgoingBitrate: 1000000,
+          portRange: { min: 50000, max: 59999 }
         }
       }
 

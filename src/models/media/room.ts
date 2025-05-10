@@ -46,10 +46,10 @@ export default class Room {
   }
 
   async createWebRtcTransport(userId: string) {
-    const { maxIncomingBitrate, initialAvailableOutgoingBitrate } =
+    const { maxIncomingBitrate, initialAvailableOutgoingBitrate,listenIps,portRange } =
       config.mediasoup.webRtcTransport;
     const transport = await this.router.createWebRtcTransport({
-      listenIps: config.mediasoup.webRtcTransport.listenIps,
+      listenIps,
       enableUdp: true,
       enableTcp: true,
       preferUdp: true,

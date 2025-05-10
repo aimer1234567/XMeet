@@ -163,6 +163,7 @@ export class SpeechRecognition {
     if (!this.userSpeechSpaceMap.get(userId)) {
       return;
     }
+    console.log("buffer",buffer)
     this.userSpeechSpaceMap.get(userId)!.audioChunks.push(buffer);
     this.userSpeechSpaceMap.get(userId)!.audioStream.triggerRead();
   }

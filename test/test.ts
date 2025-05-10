@@ -18,7 +18,7 @@ async function name() {
     const speechesLangMay = new Map();
     for (const lang of langs) {
       let speeches = await meetSpeechDao.findSpeechesByRoomAndLang(
-        "150f86f9-c0f0-483f-b2d8-689b7488ddfe",
+        "ad05e42d-a33e-4891-89cf-a51839b339ed",
         lang
       );
       speechesLangMay.set(lang, speeches);

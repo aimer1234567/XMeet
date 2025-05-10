@@ -17,6 +17,10 @@ export class AIClient {
      consolidate these sections into a single summary that includes the meeting theme, meeting
       keywords, and meeting abstract. The meeting abstract should be under 300 words.`,
   };
+  promptC={
+    zh:`会议主题: 会议关键字: 会议摘要:`,
+    en:`Conference Topic: Conference Keywords: Conference Summary:`
+  }
   constructor() {
     this.openai = new OpenAI({
       apiKey: config.openai.apiKey,
@@ -27,13 +31,14 @@ export class AIClient {
     let summaryList: string[] = [];
     for (const text of texts) {
       let completion = await this.openai.chat.completions.create({
-        model: "moonshot-v1-8k",
+        model: config.openai.model,
         messages: [
           {
             role: "system",
             content: this.promptA[lang],
           },
           { role: "user", content: text },
+          { role:"assistant",content:this.promptC[lang]}
         ],
         temperature: 0.3,
         n: 1,
@@ -59,6 +64,7 @@ export class AIClient {
             content: this.promptB[lang],
           },
           { role: "user", content: text },
+          { role:"assistant",content:this.promptC[lang]}
         ],
         temperature: 0.3,
         n:1,
