@@ -43,9 +43,10 @@ export default {
       closeTime:60,//会议超时时间，单位分钟
       remindTime:15,//会议超时提醒时间，单位分钟
       maxCloseTime:120, // 会议最大超时时间，单位分钟
-      maxPeer:30,// 最大用户数
+      maxPeer:50,// 最大用户数
+      minPeer:10,//最小也是默认用户数
       maxSpeech:4,// 最大发言数
-      maxAppointMeetNumber:5,
+      maxAppointMeetNumber:5,//会议最大预约数量
     },
     webServer:{
       isHttps:true,
@@ -106,7 +107,7 @@ export default {
           listenIps: [
             {
               ip: '0.0.0.0',
-              announcedIp: "10.22.92.125"// replace by public IP address
+              announcedIp: "10.22.94.154"// replace by public IP address
             }
           ],
           maxIncomingBitrate: 1500000,

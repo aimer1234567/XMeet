@@ -5,19 +5,19 @@ export class CreateMeetRoomReq {
   durationMinutes: number;
   name: string;
   remark: string;
-  password: string;
+  numLimit: string;
   constructor(
     startTime: Date,
     durationMinutes: number,
     name: string,
     remark: string,
-    password: string
+    numLimit: string
   ) {
     this.startTime = startTime;
     this.durationMinutes = durationMinutes;
     this.name = name;
     this.remark = remark;
-    this.password = password;
+    this.numLimit = numLimit;
   }
 }
 
@@ -25,7 +25,7 @@ export class CreateMeetRoomInstantReq {
   constructor(
     public name: string,
     public remark: string,
-    public password: string
+    public numLimit: number
   ) {}
 }
 

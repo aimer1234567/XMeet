@@ -43,7 +43,6 @@ async function name() {
         texts.push(text)
         console.log("会议转录"+texts)
         let summary=await aiClient.intelligentSummary(texts,lang as 'zh' | 'en')
-        intelligentSummary.push({lang,summary})
       }
       console.log("会议总结"+JSON.stringify(intelligentSummary))
     }

@@ -14,25 +14,22 @@ class MeetRoom{
     name:string
     @Column()
     remark:string
-    @Column({name:"is_password"})
-    isPassword:boolean
     @Column({name:"is_instant"})
     isInstant:boolean
-    @Column()
-    password:string
+    @Column({name:"num_limit"})
+    numLimit:number
     @Column({name:"is_over"})
     isOver:boolean
     @Column({name:"is_start"})
     isStart:boolean
-    constructor(creatorId:string,startTime:Date,durationMinutes:number,name:string,remark:string,isPassword:boolean,isInstant:boolean,password:string,isOver:boolean,isStart:boolean) {
+    constructor(creatorId:string,startTime:Date,durationMinutes:number,name:string,remark:string,isInstant:boolean,numLimit:number,isOver:boolean,isStart:boolean) {
         this.creatorId = creatorId;
         this.startTime = startTime;
         this.durationMinutes = durationMinutes;
         this.name = name;
         this.remark = remark;
-        this.isPassword = isPassword;
         this.isInstant = isInstant;
-        this.password = password;
+        this.numLimit = numLimit;
         this.isOver = isOver;
         this.isStart= isStart;
     }

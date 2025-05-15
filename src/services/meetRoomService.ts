@@ -14,6 +14,7 @@ import MyError from "../common/myError";
 import meetRoomRecordDao from "../dao/meetRoomRecordDao";
 import { roomStatusManager } from "./roomStatusManager";
 import config from "../common/config/config";
+import { logger } from "../common/logger";
 export default class MeetRoomService {
   meetRoomDao = meetRoomDao;
   userDao: UserDao = userDao;
@@ -39,12 +40,15 @@ export default class MeetRoomService {
       meetRoom.name = data.name;
     }
     meetRoom.isInstant = true;
-    if (!data.password) {
-      meetRoom.isPassword = false;
-    } else {
-      meetRoom.isPassword = true;
+    if (meetRoom.numLimit){
+      if (meetRoom.numLimit > config.meetServer.maxPeer){
+        meetRoom.numLimit = config.meetServer.maxPeer;
+      }else if(meetRoom.numLimit < config.meetServer.minPeer){
+        meetRoom.numLimit = config.meetServer.minPeer;
+      }
+    }else{
+      meetRoom.numLimit = config.meetServer.minPeer;
     }
-    meetRoom.password = data.password;
     meetRoom.remark = data.remark;
     const identifiers = await this.meetRoomDao.addMeetRoom(meetRoom);
     const meetRoomId = identifiers![0].id;
@@ -60,9 +64,11 @@ export default class MeetRoomService {
       //判断房间是否存在或者关闭
       throw new MyError(ErrorEnum.RoomNotExist);
     }
-    return Result.succuss({
-      isPassword: meetRoom.isPassword,
-    });
+    if (roomStatusManager.getRoomUserSetIng(meetRoomId).size >= meetRoom.numLimit){
+      throw new MyError(ErrorEnum.RoomUserLimit);
+    }
+    logger.info("用户加入会议：" + userId);
+    return Result.succuss()
   }
 
   async createAppointMeet(userId: string, data: CreateMeetRoomReq) {
@@ -72,10 +78,14 @@ export default class MeetRoomService {
       throw new MyError(ErrorEnum.AppointMeetNumberLimit);
     }
     const meetRoom = plainToInstance(MeetRoom, data);
-    if (!meetRoom.password) {
-      meetRoom.isPassword = false;
-    } else {
-      meetRoom.isPassword = true;
+    if (meetRoom.numLimit){
+      if (meetRoom.numLimit > config.meetServer.maxPeer){
+        meetRoom.numLimit = config.meetServer.maxPeer;
+      }else if(meetRoom.numLimit < config.meetServer.minPeer){
+        meetRoom.numLimit = config.meetServer.minPeer;
+      }
+    }else{
+      meetRoom.numLimit = config.meetServer.minPeer;
     }
     if (!meetRoom.remark) {
       meetRoom.remark = "";

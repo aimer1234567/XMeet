@@ -34,4 +34,15 @@ export default class UserController {
       next(err);
     }
   }
+  async updateUserInfo(req: Request, res: Response, next: NextFunction) {
+    try{
+      let userId = req.headers["userId"] as string;
+      let name = req.body.name;
+      let lang = req.body.lang;
+      let result=await this.userService.updateUserInfo(userId, name, lang);
+      res.json(result);
+    }catch(err){
+      next(err)
+    }
+  }
 }

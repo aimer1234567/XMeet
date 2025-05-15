@@ -12,5 +12,6 @@ export enum ErrorEnum{
     NoPermission="没有权限",
     SQLError="数据库错误",
     AppointMeetNumberLimit="预约会议数量已达上限",
-    TaskExist="任务已存在"
+    TaskExist="任务已存在",
+    RoomUserLimit="房间用户数已达上限"
 } 

@@ -17,6 +17,16 @@ export class UserDao {
     }
     return user;
   }
+  async updateUserInfo(id:string,name:string,lang:string){
+    const user=await this.userRepository.findOneBy({id:id})
+    if(!user){
+      throw new MyError(`User with id ${id} not found`);
+    }
+    user.name=name
+    user.lang=lang
+    await this.userRepository.save(user)
+    return user
+  }
 }
 const userDao = new UserDao();
 export { userDao };

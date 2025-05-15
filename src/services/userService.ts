@@ -58,4 +58,13 @@ export default class UserService {
       return token;
     }
   }
+
+  async updateUserInfo(userId:string,name:string,lang:string){
+    let name10=name.slice(0,10)
+    if (lang!="zh" &&lang!="en"){
+      lang="zh"
+    }
+    this.userDao.updateUserInfo(userId,name10,lang)
+    return Result.succuss()
+  }
 }
