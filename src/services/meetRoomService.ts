@@ -59,10 +59,19 @@ export default class MeetRoomService {
     if (userStatusManager.userHasRoom(userId)) {
       throw new MyError(ErrorEnum.UserInRoom);
     }
-    const meetRoom = await this.meetRoomDao.getMeetRoomById(meetRoomId);
-    if (!meetRoom || meetRoom.isOver) {
-      //判断房间是否存在或者关闭
+    const meetRoom = await this.meetRoomDao.getMeetRoomById(meetRoomId)
+    if(!meetRoom){
+            //判断房间是否存在或者关闭
+                  console.log(1)
       throw new MyError(ErrorEnum.RoomNotExist);
+    }
+    if (meetRoom.isOver) {
+                  console.log(2)
+      throw new MyError(ErrorEnum.RoomNotExist);
+    }
+    if (!meetRoom.isStart) {
+                  console.log(3)
+      throw new MyError(ErrorEnum.MeetNotStart);
     }
     if (roomStatusManager.getRoomUserSetIng(meetRoomId).size >= meetRoom.numLimit){
       throw new MyError(ErrorEnum.RoomUserLimit);
@@ -126,15 +135,36 @@ export default class MeetRoomService {
     const meetRoomRecord = await this.meetRoomRecordDao.queryMeetRecordById(
       roomId
     );
+    const {lang}= await this.userDao.selectById(userId);
     const durationPieChart = meetRoomRecord!.durationPieChart;
     const chatHeatMap = meetRoomRecord!.chatHeatMap;
-    const wordCloud = meetRoomRecord!.wordCloud;
-    const summary = meetRoomRecord!.summary
+    let wordCloud
+    let wordCloudMatch=meetRoomRecord!.wordCloud?.find(item => item.lang === lang)
+    if (wordCloudMatch){
+      wordCloud = wordCloudMatch.wordFrequencyArray;
+    }
+    let summaryText = "";
+    const summaryMatch = meetRoomRecord!.summary?.find(item => item.lang === lang);
+    if (summaryMatch) {
+      summaryText = summaryMatch.summary;
+    }
     return Result.succuss({
       durationPieChart,
       chatHeatMap,
       wordCloud,
-      summary
+      summary:summaryText
     });
+  }
+
+  async deleteAppointMeet(userId: string, meetRoomId: string) {
+    const meetRoom = await this.meetRoomDao.getMeetRoomById(meetRoomId);
+    if (!meetRoom) {
+      throw new MyError(ErrorEnum.RoomNotExist);
+    }
+    if (meetRoom.creatorId !== userId) {
+      throw new MyError(ErrorEnum.NoPermission);
+    }
+    await this.meetRoomDao.deleteAppointMeet(meetRoomId);
+    return Result.succuss();
   }
 }

@@ -11,7 +11,8 @@ export default function verifyHandler(
 ) {
   const reqURL=req.url
   console.log(`-------------------${reqURL}------------`)
-  if(reqURL==='/user/login'){
+  if(reqURL==='/user/login' || reqURL==='/user/verifyCaptcha' || reqURL==='/user/getMailCaptcha'){
+    console.log(`----------------不用验证-----------`)
     return next()
   }
   // 从请求头中获取 token

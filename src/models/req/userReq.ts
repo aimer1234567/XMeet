@@ -1,6 +1,6 @@
-export class UserRegisterReq {
+export class    UserRegisterReq {
     constructor(
-        public email:string,
+        public mail:string,
         public captcha:number,
         public userName:string,
         public password:string,

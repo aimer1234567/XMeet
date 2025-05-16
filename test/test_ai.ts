@@ -4,7 +4,7 @@
   import meetSpeechDao from "../src/dao/MeetSpeechDao";
   import MeetSpeech from "../src/models/entity/MeetSpeech";
 import { AIClient } from "../src/ai/aiClient";
-async function name() {
+async function main() {
   sourceMapSupport.install(); //在运行js文件时可以直接调试ts文件
   await AppDataSource.initialize()
     .then(() => {
@@ -47,4 +47,4 @@ async function name() {
       console.log("会议总结"+JSON.stringify(intelligentSummary))
     }
 }
-name()
+main()

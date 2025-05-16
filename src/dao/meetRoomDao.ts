@@ -126,5 +126,9 @@ class MeetRoomDao {
       .whereInIds(ids)
       .execute();
     }
+
+    async deleteAppointMeet(id: string) {
+      return await this.meetRoomRepository.delete({id:id});
+    }
 }
 export default new MeetRoomDao();

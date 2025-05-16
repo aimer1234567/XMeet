@@ -9,4 +9,5 @@ router.get("/getAppointMeets",(req,res,next)=>meetRoomController.getAppointMeets
 router.post("/getMeetRoomRecord",(req,res,next)=>meetRoomController.getMeetRoomRecord(req,res,next))
 router.post('/getMeetRoomSummary',(req,res,next)=>meetRoomController.getMeetRoomSummary(req,res,next))
 router.get('/getRecentMeeting',(req,res)=>meetRoomController.getRecentMeeting(req,res))
+router.post('/deleteAppointMeet',( req,res,next)=>meetRoomController.deleteAppointMeet(req,res,next))
 export default router

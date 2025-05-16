@@ -79,8 +79,18 @@ export default class MeetRoomController {
   async getMeetRoomSummary(req: Request, res: Response, next: NextFunction){
     const userId = req.headers["userId"] as string;
     try{
-      const {meetId,lang}=req.body
+      const {meetId}=req.body
       const result=await this.meetRoomService.getMeetRoomSummary(userId,meetId)
+      return res.json(result)
+    }catch(err){
+      next(err)
+    }
+  }
+  async deleteAppointMeet(req: Request, res: Response, next: NextFunction){
+    const userId = req.headers["userId"] as string;
+    const meetRoomId=req.body.meetId as string
+    try{
+      const result=await this.meetRoomService.deleteAppointMeet(userId,meetRoomId)
       return res.json(result)
     }catch(err){
       next(err)

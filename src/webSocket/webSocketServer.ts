@@ -67,15 +67,19 @@ export class WebSocketServer {
       );
       console.log(`${socket.data.userId} socket 连接成功`);
       socket.on("disconnect", () => {
-        console.log(`${socket.data.userId} 断开连接`);
-        this.disconnectFunction.forEach((func) => {
-          func(socket.data.userId);
-        });
-        if (
-          socket.data.sessionId ===
-          this.userStatusManager.getUserSession(socket.data.userId)
-        ) {
-          this.userStatusManager.deleteUser(socket.data.userId);
+        try {
+          console.log(`${socket.data.userId} 断开连接`);
+          this.disconnectFunction.forEach((func) => {
+            func(socket.data.userId);
+          });
+          if (
+            socket.data.sessionId ===
+            this.userStatusManager.getUserSession(socket.data.userId)
+          ) {
+            this.userStatusManager.deleteUser(socket.data.userId);
+          }
+        } catch (err) {
+          console.log(err);
         }
       });
       socket.on("speech", (speech) => {
@@ -86,11 +90,15 @@ export class WebSocketServer {
 
   send(userId: string, api: string, data: any) {
     if (!this.isInit) throw new MyError(ErrorEnum.WebSocketServerNotInit);
-    const socket = this.userStatusManager.getUserWebSocket(userId);
-    if (!socket) {
-      throw new MyError(ErrorEnum.UserIsNone);
+    try{
+        const socket = this.userStatusManager.getUserWebSocket(userId);
+        if (!socket) {
+          throw new MyError(ErrorEnum.UserIsNone);
+        }
+        socket.emit(api, data); // 使用 socket.io 发送消息
+    }catch(err){
+      console.log(err);
     }
-    socket.emit(api, data); // 使用 socket.io 发送消息
   }
 
   OnDisconnect(func: (userId: string) => void) {

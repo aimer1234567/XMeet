@@ -11,13 +11,16 @@ class MeetRoomRecord {
   @Column({name:'duration_pie_chart',type:'json', nullable: true })
   durationPieChart?: any;
   @Column({name:'word_cloud',type:'json', nullable: true })
-  wordCloud?: any;
+  wordCloud?: {
+      lang: string;
+      wordFrequencyArray: { value: string; count: number }[];
+    }[];
   @Column()
   time: number;
   @Column({name:'start_time',type:'datetime'})
   startTime: Date;
   @Column({name:'summary',type:'json', nullable: true })
-  summary?: string;
+  summary?: { lang: string; summary: string }[];
   @Column({name:'chat_heat_map',type:'json',nullable: true })
   chatHeatMap?: any;
   @OneToMany(() => MeetUser, (meetUser) => meetUser.meeting)

@@ -10,6 +10,14 @@ export class UserDao {
     }
     return user;
   }
+  async isOnlyByUsername(username: string) {
+    const user = await this.userRepository.findOneBy({ userName: username });
+    if (user) {
+      return false;
+    }else{
+      return true;
+    }
+  }
   async selectById(id: string){
     const user= await this.userRepository.findOneBy({ id: id });
     if (!user) {

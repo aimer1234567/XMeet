@@ -44,7 +44,8 @@ class UserSpeechSpace {
   constructor(
     public audioChunks: Buffer[],
     public audioStream: AudioStream,
-    public pcmStream: PassThrough
+    public pcmStream: PassThrough,
+    public ffmpegProcess: any,
   ) {}
 }
 export class SpeechRecognition {
@@ -125,13 +126,15 @@ export class SpeechRecognition {
     const audioChunks = Array<Buffer>();
     const audioStream = new AudioStream({}, audioChunks);
     const pcmStream = new PassThrough();
+    let ffmpegProcess
     this.userSpeechSpaceMap.set(userId, {
       audioChunks,
       audioStream,
       pcmStream,
+      ffmpegProcess
     });
     this.recWorker.postMessage({ action: "init", data: { userId, lang } });
-    ffmpeg()
+    ffmpegProcess =ffmpeg()
       .input(audioStream)
       .inputFormat("webm") // 如果 WebSocket 是传输 WebM 格式的音频
       .audioFilters([
@@ -172,6 +175,7 @@ export class SpeechRecognition {
     if (userSpeechSpace) {
       userSpeechSpace.pcmStream.end(); // 结束 PCM 流
       userSpeechSpace.audioStream.endStream(); // 结束流
+      userSpeechSpace.ffmpegProcess.kill("SIGKILL");
     }
     this.userSpeechSpaceMap.delete(userId);
     this.rceTaskQueue.addTaskToQueue({ action: "close", data: { userId } });
