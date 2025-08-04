@@ -24,7 +24,7 @@ export default {
     },
     jwt:"dswdwqdqdqwdsqwdqd",
     openai:{
-      apiKey:"sk-59e86a33b21546d58c3e6bdf81707f38",
+      apiKey:"",
       baseURL:"https://dashscope.aliyuncs.com/compatible-mode/v1",
       model:"qwen-turbo"
     },
@@ -32,7 +32,7 @@ export default {
         host:"gz-smtp.qcloudmail.com",
         port:465,
         user:"aimer@luoxiaoying.online",// 发件人邮箱
-        pass:"1234qwerASDF",// 发件人邮箱授权码
+        pass:"",// 发件人邮箱授权码
         secure:true,// 使用 SSL
         captchaMail:{
             subject:"XMeet",// 邮件主题
